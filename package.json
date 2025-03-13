@@ -1,0 +1,22 @@
+{
+  "name": "curo-inspire",
+  "version": "1.0.0",
+  "description": "Curo Inspire WhatsApp API Integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": "16.x"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "axios": "^1.4.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-basic-auth": "^1.2.1",
+    "moment-timezone": "^0.5.47",
+    "uuid": "^11.1.0"
+  }
+}
