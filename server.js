@@ -220,7 +220,8 @@ app.post("/receive-reply", async (req, res) => {
             Timestamp: timestamp,
             Body: cleanedReplyMessage,
             Channel: "whatsapp",
-            ApiKey: "7D91EBDD-57F4-40FE-90B6-42D6D2B78313"
+           ApiKey: process.env.INSPIRE_API_KEY
+
         };
 
         console.log("🔍 Sending data to Inspire...");
