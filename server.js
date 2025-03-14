@@ -5,37 +5,25 @@ const { createClient } = require('@supabase/supabase-js');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment-timezone');
+const whatsappStatusWebhook = require('./whatsapp-status-webhook'); // Import the webhook router
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // Make sure the port is configurable from .env
 
 // Initialize Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false }
+  auth: { persistSession: false },
 });
 
-// 1️⃣ **Request Logging Middleware**: Logs everything (method, URL, headers, body)
-app.use((req, res, next) => {
-    console.log("\n=== REQUEST LOG START ===");
-    console.log(`Incoming ${req.method} request to: ${req.url}`);
-    console.log("Headers:", req.headers);
-    console.log("Body:", req.body || {});
-    console.log("=== REQUEST LOG END ===\n");
-    next();
-});
+// Middleware to parse incoming JSON
+app.use(express.json()); // Add this to handle JSON body parsing globally
 
-// 2️⃣ **Skip Body Parsing for GET Requests**:
-app.use((req, res, next) => {
-    if (req.method === 'GET') {
-        console.log("⚠️ Skipping JSON body parsing for GET request.");
-        return next();
-    } else {
-        return express.json()(req, res, next);
-    }
-});
-
-// 3️⃣ **Enable CORS**:
+// Enable CORS for all routes
 app.use(cors());
+
+// Mount the /whatsapp-status-webhook route correctly
+app.use('/whatsapp-status-webhook', whatsappStatusWebhook); // Mount the router for the webhook
+
 
 // ----------------------------------------------------------------------------
 // HELPER FUNCTION: sanitizeAndReplaceGreetings
@@ -220,7 +208,8 @@ app.post("/receive-reply", async (req, res) => {
             Timestamp: timestamp,
             Body: cleanedReplyMessage,
             Channel: "whatsapp",
-            ApiKey: "7D91EBDD-57F4-40FE-90B6-42D6D2B78313"
+         apiKey: process.env.INSPIRE_API_KEY
+
         };
 
         console.log("🔍 Sending data to Inspire...");
