@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
@@ -220,7 +221,7 @@ app.post("/receive-reply", async (req, res) => {
             Timestamp: timestamp,
             Body: cleanedReplyMessage,
             Channel: "whatsapp",
-           ApiKey: process.env.INSPIRE_API_KEY
+         apiKey: process.env.INSPIRE_API_KEY
 
         };
 
