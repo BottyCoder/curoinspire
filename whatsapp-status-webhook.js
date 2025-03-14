@@ -8,51 +8,51 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 // Middleware to parse incoming JSON data
 router.use(express.json());
 
-// Function to insert status into the database
-// Function to insert or update the status in the database
-async function insertStatusToDb(statusDetails) {
+// Function to insert a NEW record each time a status update arrives
+async function insertStatusHistory(statusDetails) {
   try {
     const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
 
-    // Convert Unix timestamp to ISO format
+    // Convert Unix timestamp to standard datetime if we receive a numeric timestamp
+    // e.g. 1741842917 => "2025-03-13 05:15:17"
     const convertedTimestamp = new Date(timestamp * 1000).toISOString().slice(0, 19).replace("T", " ");
 
-    // Prepare data to insert or update
+    // Prepare data to insert a NEW record every time
     const dataToInsert = {
       wa_id: messageId,
       mobile_number: recipientId,
-      status: status,
-      timestamp: convertedTimestamp, // Store converted timestamp
+      status,                        // "failed", "read", etc.
+      status_timestamp: convertedTimestamp,  // We'll store this as 'status_timestamp'
       error_code: errorDetails ? errorDetails.code : null,
       error_message: errorDetails ? errorDetails.message : null,
-      client_guid: clientGuid || "Not Applicable", // Default value for missing client_guid
-      channel: "whatsapp", // Default channel value for WhatsApp messages
+      client_guid: clientGuid || "Not Applicable",
+      channel: "whatsapp",
     };
 
-    // Log the data to be inserted
-    console.log("Data to insert into messages_log:", dataToInsert);
+    console.log("=== Attempting to INSERT a new status record into Supabase ===", dataToInsert);
 
-    // Use 'upsert' to insert new records or update existing ones based on the unique key (wa_id)
+    // Use .insert(...) to create a NEW record instead of upserting
     const { data, error } = await supabase
-      .from("messages_log")
-      .upsert([dataToInsert], { onConflict: ['wa_id'] });
+      .from("messages_log")   // or your table name
+      .insert([dataToInsert]);
 
     if (error) {
-      throw new Error(`Error inserting status: ${error.message}`);
+      console.error("❌ Supabase Insert Error:", error);
+      throw new Error(`Error inserting status record: ${error.message}`);
     }
 
-    console.log(`Successfully inserted or updated status for message ID: ${messageId}`);
+    console.log(`✅ Inserted new status record for message ID: ${messageId}`);
+    console.log("✅ Supabase Insert Data:", data);
   } catch (err) {
-    console.error(`Error inserting status: ${err.message}`);
+    console.error(`Error inserting status record: ${err.message}`);
   }
 }
-
 
 // Define the POST route for the webhook
 router.post('/', (req, res) => {
   console.log("Received WhatsApp Status Webhook:", JSON.stringify(req.body, null, 2));
 
-  // If no body is received, log an error
+  // If no body is received, log an error and return 400
   if (!req.body || Object.keys(req.body).length === 0) {
     console.log("⚠️ Received empty body");
     return res.status(400).send('No data received');
@@ -61,10 +61,10 @@ router.post('/', (req, res) => {
   // Process the status information from the WhatsApp webhook payload
   const { object, entry } = req.body;
 
-  // Example: Check if the incoming data contains the expected structure
+  // Check if we have the expected structure from the webhook
   if (object === "whatsapp_business_account" && Array.isArray(entry)) {
     entry.forEach((entryItem) => {
-      const { id, changes } = entryItem;
+      const { changes } = entryItem;
       if (Array.isArray(changes)) {
         changes.forEach((change) => {
           const { value } = change;
@@ -85,19 +85,10 @@ router.post('/', (req, res) => {
                 });
               }
 
-              // Determine the client GUID (if available)
-              let clientGuid = "Not Applicable"; // Default if no client GUID is available
+              let clientGuid = "Not Applicable"; // Default if no client GUID is found
 
-              // Assuming that you retrieve the client_guid based on the recipient_id (adjust logic as needed)
-              // You may use your own logic here to get client_guid based on recipient_id or other criteria
-              if (recipient_id) {
-                // For example: Query the database or some source to find client_guid for recipient_id
-                // If no client_guid found, it will remain as "Not Applicable"
-                // This is just an example, you should adjust this as needed
-              }
-
-              // Insert status into the database
-              insertStatusToDb({
+              // Insert a NEW record for each status update
+              insertStatusHistory({
                 messageId,
                 recipientId: recipient_id,
                 status,
@@ -111,6 +102,8 @@ router.post('/', (req, res) => {
       }
     });
   } else {
+    // If the structure doesn't match what we expect from the WhatsApp Cloud API,
+    // return 400 instead of 404 to indicate "Bad Request"
     console.log("⚠️ Invalid data structure or unexpected webhook object");
     return res.status(400).send('Invalid data structure');
   }
@@ -119,5 +112,4 @@ router.post('/', (req, res) => {
   res.status(200).send('Webhook received');
 });
 
-// Export the router for use in server.js
 module.exports = router;
