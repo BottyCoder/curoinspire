@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Status</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Check Message Status</h1>
+        <form id="search-form">
+            <input type="text" id="phone-number" placeholder="Enter Phone Number" required>
+            <button type="submit">Search</button>
+        </form>
+        <div id="message-status" class="status-container">
+            <!-- Search result will appear here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("search-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const phoneNumber = document.getElementById("phone-number").value;
+
+            if (!phoneNumber) {
+                alert("Please enter a phone number.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/get-message-status?phone_number=${phoneNumber}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    document.getElementById("message-status").innerHTML = `<p>${data.error}</p>`;
+                } else {
+                    const { messages } = data;
+                    if (messages.length === 0) {
+                        document.getElementById("message-status").innerHTML = `<p>No messages found in the last 24 hours.</p>`;
+                    } else {
+                        const statusList = messages.map(message => `
+                            <div class="status-item">
+                                <p><strong>Message ID:</strong> ${message.wa_id}</p>
+                                <p><strong>Status:</strong> ${message.status}</p>
+                                <p><strong>Timestamp:</strong> ${new Date(message.timestamp).toLocaleString()}</p>
+                                <p><strong>Client GUID:</strong> ${message.client_guid}</p>
+                                <hr>
+                            </div>
+                        `).join("");
+
+                        document.getElementById("message-status").innerHTML = statusList;
+                    }
+                }
+            } catch (err) {
+                document.getElementById("message-status").innerHTML = `<p>Failed to fetch data. Try again later.</p>`;
+            }
+        });
+    </script>
+</body>
+
+</html>
