@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
@@ -38,7 +39,20 @@ app.use((req, res, next) => {
 app.use(cors());
 
 // ----------------------------------------------------------------------------
-// 📩 CLIENT SEND MESSAGE (POST /client-send-message)
+// HELPER FUNCTION: sanitizeAndReplaceGreetings
+// ----------------------------------------------------------------------------
+function sanitizeAndReplaceGreetings(text) {
+    if (!text) return "";
+    // Remove \r and \n
+    let cleaned = text.replace(/[\r\n]+/g, " ");
+    // Replace "hi" or "hello" as whole words (case-insensitive)
+    const greetingRegex = /\b(hi|hello)\b/gi;
+    cleaned = cleaned.replace(greetingRegex, "[replaced]");
+    return cleaned;
+}
+
+// ----------------------------------------------------------------------------
+// 📩  CLIENT SEND MESSAGE (POST /client-send-message)
 // ----------------------------------------------------------------------------
 app.post('/client-send-message', async (req, res) => {
     try {
@@ -54,8 +68,9 @@ app.post('/client-send-message', async (req, res) => {
         const tracking_code = uuidv4();
         const timestampUTC = moment.utc().format();
 
-        // Sanitize the message by removing \r and \n
-        const sanitizedMessage = message_body.replace(/[\r\n]+/g, " ");
+        // Sanitize and replace "hi" / "hello"
+        const sanitizedMessage = sanitizeAndReplaceGreetings(message_body);
+
         console.log(`📩 Sending WhatsApp message to ${recipient_number}: "${sanitizedMessage}"`);
 
         // Prepare WhatsApp Payload
@@ -94,7 +109,7 @@ app.post('/client-send-message', async (req, res) => {
                 whatsappPayload,
                 {
                     headers: {
-                        Authorization: "Basic 101f541f-ff7b-47b3-80e3-3298630e041c-HFS7ACu",  // Correct WhatsApp API token
+                        Authorization: "Basic 101f541f-ff7b-47b3-80e3-3298630e041c-HFS7ACu",
                         "Content-Type": "application/json"
                     }
                 }
@@ -113,7 +128,7 @@ app.post('/client-send-message', async (req, res) => {
             wa_id,
             original_wamid: wamid,
             tracking_code,
-            client_guid,  // Store `client_guid` for future reference
+            client_guid,
             mobile_number: recipient_number,
             customer_name,
             message: sanitizedMessage,
@@ -131,7 +146,7 @@ app.post('/client-send-message', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------------
-// 📩 BOTFORCE GET LATEST TRACKING (GET /botforce-get-latest-tracking/:recipient_number)
+// 📩  BOTFORCE GET LATEST TRACKING (GET /botforce-get-latest-tracking/:recipient_number)
 // ----------------------------------------------------------------------------
 app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
     const { recipient_number } = req.params;
@@ -163,8 +178,8 @@ app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
 });
 
 // ----------------------------------------------------------------------------
-// 📩 RECEIVE REPLY (POST /receive-reply)
-// Stores the reply and triggers forwarding to /botforce-confirm-reply
+// 📩  RECEIVE REPLY (POST /receive-reply)
+// ----------------------------------------------------------------------------
 app.post("/receive-reply", async (req, res) => {
     const { tracking_code, reply_message } = req.body;
 
@@ -177,35 +192,37 @@ app.post("/receive-reply", async (req, res) => {
     }
 
     try {
-        console.log("🔍 Fetching client_guid from the database using tracking_code:", tracking_code);
-
-        // Retrieve client_guid from the database using tracking_code
+        console.log("🔍 Fetching client_guid & original_wamid from the database using tracking_code:", tracking_code);
+        
+        // Retrieve client_guid and original_wamid from the database using tracking_code
         const { data, error } = await supabase
             .from("messages_log")
-            .select("client_guid")
+            .select("client_guid, original_wamid")
             .eq("tracking_code", tracking_code)
             .single();
 
         if (error || !data) {
-            console.error("❌ No client_guid found for tracking_code:", tracking_code);
-            return res.status(404).json({ error: "No client_guid found for the given tracking_code" });
+            console.error("❌ No client_guid/original_wamid found for tracking_code:", tracking_code);
+            return res.status(404).json({ error: "No client_guid or wamid found for the given tracking_code" });
         }
 
-        const client_guid = data.client_guid;
+        const { client_guid, original_wamid } = data;
         console.log("🔍 Found client_guid:", client_guid);
+        console.log("🔍 Found original_wamid:", original_wamid);
 
-        // Clean reply message
-        const cleanedReplyMessage = reply_message.replace(/[\r\n]+/g, " "); 
+        // Clean and replace greetings in the reply message
+        const cleanedReplyMessage = sanitizeAndReplaceGreetings(reply_message);
         console.log("Cleaned Reply Message:", cleanedReplyMessage);
 
         // Prepare the payload in the new format required by Inspire
-        const timestamp = moment().format('YYYY-MM-DD HH:mm:ss');  // Current timestamp in the required format
+        const timestamp = moment().format('YYYY-MM-DD HH:mm:ss');
         const inspirePayload = {
-            ClientGuid: client_guid,  // Use the client_guid from the database
+            ClientGuid: client_guid,
             Timestamp: timestamp,
             Body: cleanedReplyMessage,
             Channel: "whatsapp",
-            ApiKey: "7D91EBDD-57F4-40FE-90B6-42D6D2B78313"  // The auth token is now in the body
+         apiKey: process.env.INSPIRE_API_KEY
+
         };
 
         console.log("🔍 Sending data to Inspire...");
@@ -213,7 +230,7 @@ app.post("/receive-reply", async (req, res) => {
 
         // Forward the reply to Inspire with authentication in the body
         const inspireResponse = await axios.post(
-            "https://inspire-ohs.com/api/V3/WA/GetWaMsg", // Correct URL for the 3rd party system (Inspire)
+            "https://inspire-ohs.com/api/V3/WA/GetWaMsg",
             inspirePayload,
             {
                 headers: {
@@ -222,15 +239,15 @@ app.post("/receive-reply", async (req, res) => {
             }
         );
 
-        // Log the response from Inspire
         console.log("🔍 Inspire Response:", inspireResponse.data);
 
-        // Return the success response with the required format
+        // Return the success response with a dynamic wamid from your DB
+        // (the 'original_wamid' from the original message)
         res.json({
             success: true,
             tracking_code: tracking_code,
-            wa_id: uuidv4(),  // Generate a new wa_id if required
-            wamid: "wamid.HBgLMjc4MjQ5Nzc0MjcVAgARGBI5NjQ3Q0IzOEEzMDBFOTgzM0MA" // Use an actual wamid if available
+            wa_id: uuidv4(),  // Optionally generate a new wa_id if needed
+            wamid: original_wamid
         });
     } catch (error) {
         console.error("❌ Error in /receive-reply logic:", error);
