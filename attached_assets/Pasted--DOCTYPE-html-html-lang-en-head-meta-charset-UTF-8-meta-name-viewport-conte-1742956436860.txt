@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ultra Liquors - Modern Message Status</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #f3f4f6;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .highlight-status {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+
+    .status-default {
+      background-color: #e5e7eb;
+      color: #374151;
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 10px;
+      font-weight: bold;
+      outline: none;
+    }
+
+    details[open] summary ~ * {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center py-10">
+  <div class="w-full max-w-4xl p-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6">Ultra Liquors Message Status</h2>
+
+    <div class="flex gap-2 mb-4">
+      <input
+        id="phone-number"
+        type="text"
+        placeholder="Enter phone number..."
+        class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
+      <button onclick="searchStatus()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white">Search</button>
+    </div>
+
+    <div id="loading" class="hidden text-center text-indigo-500 font-medium mt-4">Loading...</div>
+
+    <div id="message-status" class="mt-6 space-y-4"></div>
+  </div>
+
+  <script>
+    function parseAsUTC(dbTimestamp) {
+      if (!dbTimestamp) return null;
+      if (dbTimestamp.includes('T') && (dbTimestamp.endsWith('Z') || dbTimestamp.includes('+'))) {
+        return new Date(dbTimestamp);
+      }
+      return new Date(dbTimestamp.trim().replace(' ', 'T') + 'Z');
+    }
+
+    const SASTFormatter = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+    const SASTDayFormatter = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" });
+
+    async function searchStatus() {
+      const phoneNumber = document.getElementById('phone-number').value.trim();
+      if (!phoneNumber) { alert('Please enter a phone number'); return; }
+
+      const resultsDiv = document.getElementById('message-status');
+      const loadingDiv = document.getElementById('loading');
+      resultsDiv.innerHTML = '';
+      loadingDiv.classList.remove('hidden');
+
+      try {
+        const response = await fetch(`/wastatus/get-ultra-message-status?phone_number=${encodeURIComponent(phoneNumber)}`);
+        const data = await response.json();
+        loadingDiv.classList.add('hidden');
+
+        if (!data.messages || data.messages.length === 0) {
+          resultsDiv.innerHTML = '<p class="text-red-500">No messages found for the last 24 hours.</p>';
+          return;
+        }
+
+        data.messages.sort((a, b) => parseAsUTC(a.status_timestamp) - parseAsUTC(b.status_timestamp));
+
+        const grouped = {};
+        data.messages.forEach(msg => {
+          const day = SASTDayFormatter.format(parseAsUTC(msg.status_timestamp));
+          if (!grouped[day]) grouped[day] = [];
+          grouped[day].push(msg);
+        });
+
+        for (const day in grouped) {
+          let dayHTML = `<details class="card mb-4"><summary>${day}</summary><div class="p-4">`;
+          grouped[day].forEach(msg => {
+            const time = SASTFormatter.format(parseAsUTC(msg.status_timestamp));
+            dayHTML += `
+              <div class="card p-4 mb-3">
+                <div class="text-sm text-gray-500">ID: ${msg.wa_id}</div>
+                <div class="font-medium">Recipient: ${msg.mobile_number}</div>
+                <div class="text-sm">Timestamp: ${time}</div>
+                <div class="flex gap-2 mt-2">
+                  ${renderStatus(msg.status)}
+                </div>
+              </div>`;
+          });
+          dayHTML += '</div></details>';
+          resultsDiv.innerHTML += dayHTML;
+        }
+      } catch (e) {
+        loadingDiv.classList.add('hidden');
+        resultsDiv.innerHTML = '<p class="text-red-500">Error fetching results.</p>';
+      }
+    }
+
+    function renderStatus(current) {
+      const statuses = ['sent', 'delivered', 'read', 'failed'];
+      return statuses.map(status => `
+        <span class="${current === status ? 'highlight-status' : 'status-default'}">
+          ${status.toUpperCase()}
+        </span>
+      `).join('<span class="text-gray-400">→</span>');
+    }
+  </script>
+</body>
+</html>
