@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
@@ -285,6 +286,12 @@ app.post('/receive-reply-debug', (req, res) => {
 // ----------------------------------------------------------------------------
 // Start Server
 // ----------------------------------------------------------------------------
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'messagestatus.html'));
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n✅ Server running on port ${PORT}`);
 });
