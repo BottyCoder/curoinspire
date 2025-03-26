@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -130,7 +129,7 @@
               <summary class="p-4 hover:bg-gray-50">${day}</summary>
               <div class="p-4 space-y-3">
           `;
-          
+
           grouped[day].forEach(msg => {
             const time = SASTFormatter.format(parseAsUTC(msg.timestamp));
             dayHTML += `
