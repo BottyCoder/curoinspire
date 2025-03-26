@@ -4,7 +4,8 @@
   "description": "Curo Inspire WhatsApp API Integration",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build:css": "tailwindcss -i ./public/styles/tailwind.css -o ./public/styles/output.css --minify"
   },
   "engines": {
     "node": "20.x"
