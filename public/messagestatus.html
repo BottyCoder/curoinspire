@@ -114,7 +114,7 @@
           return;
         }
 
-        data.messages.sort((a, b) => parseAsUTC(a.timestamp) - parseAsUTC(b.timestamp));
+        data.messages.sort((a, b) => parseAsUTC(b.timestamp) - parseAsUTC(a.timestamp));
 
         const grouped = {};
         data.messages.forEach(msg => {
