@@ -39,6 +39,30 @@ app.get('/', (req, res) => {
 // Mount the /whatsapp-status-webhook route correctly
 app.use('/whatsapp-status-webhook', whatsappStatusWebhook); // Mount the router for the webhook
 
+// Add route handler for get-message-status
+app.get('/get-message-status', async (req, res) => {
+    const { phone_number } = req.query;
+    
+    if (!phone_number) {
+        return res.status(400).json({ error: 'Phone number is required' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('messages_log')
+            .select('*')
+            .eq('mobile_number', phone_number)
+            .order('timestamp', { ascending: false });
+
+        if (error) throw error;
+
+        res.json({ messages: data || [] });
+    } catch (error) {
+        console.error('Error fetching message status:', error);
+        res.status(500).json({ error: 'Failed to fetch message status' });
+    }
+});
+
 
 // ----------------------------------------------------------------------------
 // HELPER FUNCTION: sanitizeAndReplaceGreetings
