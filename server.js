@@ -22,6 +22,12 @@ app.use(express.json()); // Add this to handle JSON body parsing globally
 // Enable CORS for all routes
 app.use(cors());
 
+// Debug logging
+app.use((req, res, next) => {
+    console.log('Incoming request:', req.method, req.url);
+    next();
+});
+
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
