@@ -32,7 +32,7 @@ app.use(express.static('public', {
 
 // Add a route for the root path
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/messagestatus.html');
+    res.redirect('/messagestatus.html');
 });
 
 // Mount the /whatsapp-status-webhook route correctly
