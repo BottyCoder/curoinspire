@@ -166,9 +166,17 @@
       };
       
       return statuses.map(status => {
-        const shouldHighlight = current === 'failed' ? 
-          current === status :
-          statusIndex[status] <= statusIndex[current];
+        let shouldHighlight = false;
+        
+        if (current === 'failed') {
+          shouldHighlight = status === 'failed';
+        } else if (current === 'read') {
+          shouldHighlight = ['sent', 'delivered', 'read'].includes(status);
+        } else if (current === 'delivered') {
+          shouldHighlight = ['sent', 'delivered'].includes(status);
+        } else if (current === 'sent') {
+          shouldHighlight = status === 'sent';
+        }
           
         return `
           <span class="${shouldHighlight ? 'highlight-status' : 'status-default'}">
