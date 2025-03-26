@@ -158,11 +158,24 @@
 
     function renderStatus(current) {
       const statuses = ['sent', 'delivered', 'read', 'failed'];
-      return statuses.map(status => `
-        <span class="${current === status ? 'highlight-status' : 'status-default'}">
-          ${status.toUpperCase()}
-        </span>
-      `).join('<span class="text-gray-400 mx-1">→</span>');
+      const statusIndex = {
+        'sent': 0,
+        'delivered': 1,
+        'read': 2,
+        'failed': 3
+      };
+      
+      return statuses.map(status => {
+        const shouldHighlight = current === 'failed' ? 
+          current === status :
+          statusIndex[status] <= statusIndex[current];
+          
+        return `
+          <span class="${shouldHighlight ? 'highlight-status' : 'status-default'}">
+            ${status.toUpperCase()}
+          </span>
+        `;
+      }).join('<span class="text-gray-400 mx-1">→</span>');
     }
   </script>
 </body>
