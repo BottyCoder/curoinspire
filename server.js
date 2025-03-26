@@ -22,14 +22,8 @@ app.use(express.json()); // Add this to handle JSON body parsing globally
 // Enable CORS for all routes
 app.use(cors());
 
-// Serve static files from the public directory with correct MIME types
-app.use(express.static('public', {
-    setHeaders: (res, path) => {
-        if (path.endsWith('.html')) {
-            res.setHeader('Content-Type', 'text/html');
-        }
-    }
-}));
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Add a route for the root path
 app.get('/', (req, res) => {
