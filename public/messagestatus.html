@@ -171,9 +171,9 @@
         if (current === 'failed') {
           shouldHighlight = status === 'failed';
         } else if (current === 'read') {
-          shouldHighlight = status === 'sent' || status === 'delivered' || status === 'read';
+          shouldHighlight = status === 'read';
         } else if (current === 'delivered') {
-          shouldHighlight = status === 'sent' || status === 'delivered';
+          shouldHighlight = status === 'delivered';
         } else if (current === 'sent') {
           shouldHighlight = status === 'sent';
         }
