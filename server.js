@@ -21,6 +21,9 @@ app.use(express.json()); // Add this to handle JSON body parsing globally
 // Enable CORS for all routes
 app.use(cors());
 
+// Serve static files from the public directory
+app.use(express.static('public'));
+
 // Mount the /whatsapp-status-webhook route correctly
 app.use('/whatsapp-status-webhook', whatsappStatusWebhook); // Mount the router for the webhook
 
