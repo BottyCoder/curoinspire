@@ -48,10 +48,14 @@ app.get('/get-message-status', async (req, res) => {
     }
 
     try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
         const { data, error } = await supabase
             .from('messages_log')
             .select('*')
             .eq('mobile_number', phone_number)
+            .gte('timestamp', thirtyDaysAgo.toISOString())
             .order('timestamp', { ascending: false });
 
         if (error) throw error;
