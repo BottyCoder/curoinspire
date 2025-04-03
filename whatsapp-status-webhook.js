@@ -17,11 +17,11 @@ async function insertStatusToDb(statusDetails) {
     // Convert Unix timestamp to ISO format
     const convertedTimestamp = new Date(timestamp * 1000).toISOString().slice(0, 19).replace("T", " ");
 
-    // Find the existing record by original_wamid
+    // Find the existing record by either original_wamid or wa_id
     const { data: existingRecord, error: findError } = await supabase
       .from("messages_log")
       .select('wa_id')
-      .eq('original_wamid', messageId)
+      .or(`original_wamid.eq.${messageId},wa_id.eq.${messageId}`)
       .single();
 
     if (findError) {
