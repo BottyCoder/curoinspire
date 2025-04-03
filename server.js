@@ -167,6 +167,8 @@ app.post('/client-send-message', async (req, res) => {
             timestamp: timestampUTC
         };
         
+        console.log("📝 Request for number:", recipient_number);
+        console.log("📝 Generated tracking code:", tracking_code);
         console.log("📝 Attempting to store message with data:", messageData);
         
         const { data: insertedData, error: insertError } = await supabase
@@ -179,9 +181,15 @@ app.post('/client-send-message', async (req, res) => {
             throw new Error("Failed to store message in database");
         }
         
-        console.log("✅ Message stored in database. Inserted data:", insertedData);
+        console.log("✅ Message stored in database. Tracking code:", tracking_code);
+        console.log("✅ Full inserted data:", insertedData);
 
-        res.status(200).json({ success: true, tracking_code, wa_id, wamid });
+        res.status(200).json({ 
+            success: true, 
+            tracking_code: tracking_code,
+            wa_id: wamid, 
+            wamid: wamid 
+        });
     } catch (error) {
         console.error("❌ Error in /client-send-message:", error);
         res.status(500).json({ error: 'Internal server error' });
