@@ -154,21 +154,25 @@ app.post('/client-send-message', async (req, res) => {
         }
 
         // Store message data, including `client_guid`, in Supabase
+        const messageData = {
+            wa_id,
+            original_wamid: wamid,
+            tracking_code,
+            client_guid,
+            mobile_number: recipient_number,
+            customer_name,
+            message: sanitizedMessage,
+            customer_response: null,
+            channel: "whatsapp",
+            status: "sent",
+            timestamp: timestampUTC
+        };
+        
+        console.log("📝 Attempting to store message with data:", messageData);
+        
         const { data: insertedData, error: insertError } = await supabase
             .from('messages_log')
-            .upsert([{
-                wa_id,
-                original_wamid: wamid,
-                tracking_code,
-                client_guid,
-                mobile_number: recipient_number,
-                customer_name,
-                message: sanitizedMessage,
-                customer_response: null,
-                channel: "whatsapp",
-                status: "sent",
-                timestamp: timestampUTC
-            }], { onConflict: 'wa_id' })
+            .upsert([messageData], { onConflict: 'wa_id' })
             .select();
 
         if (insertError) {
@@ -176,7 +180,7 @@ app.post('/client-send-message', async (req, res) => {
             throw new Error("Failed to store message in database");
         }
         
-        console.log("✅ Message stored in database with tracking code:", tracking_code);
+        console.log("✅ Message stored in database. Inserted data:", insertedData);
 
         res.status(200).json({ success: true, tracking_code, wa_id, wamid });
     } catch (error) {
