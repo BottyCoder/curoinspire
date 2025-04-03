@@ -15,42 +15,49 @@ async function insertStatusToDb(statusDetails) {
     const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
 
     // Convert Unix timestamp to ISO format
-    const convertedTimestamp = new Date(timestamp * 1000).toISOString().slice(0, 19).replace("T", " ");
+    const convertedTimestamp = new Date(timestamp * 1000).toISOString();
 
-    // Find the existing record by either original_wamid or wa_id
-    const { data: existingRecord, error: findError } = await supabase
+    // Find the original message to copy its data
+    const { data: originalMessage, error: findError } = await supabase
       .from("messages_log")
-      .select('wa_id')
+      .select('*')
       .or(`original_wamid.eq.${messageId},wa_id.eq.${messageId}`)
+      .order('timestamp', { ascending: false })
+      .limit(1)
       .single();
 
     if (findError) {
-      console.error("Error finding existing record:", findError);
+      console.error("Error finding original message:", findError);
       return;
     }
 
-    // Prepare data to update
-    const dataToUpdate = {
+    // Create new status record
+    const newStatusRecord = {
+      wa_id: uuidv4(), // Generate new unique ID
+      original_wamid: messageId,
+      tracking_code: originalMessage?.tracking_code,
+      client_guid: originalMessage?.client_guid,
+      mobile_number: originalMessage?.mobile_number,
+      customer_name: originalMessage?.customer_name,
+      message: originalMessage?.message,
+      customer_response: originalMessage?.customer_response,
+      channel: "whatsapp",
       status: status,
-      status_timestamp: convertedTimestamp,
+      timestamp: convertedTimestamp,
       error_code: errorDetails ? errorDetails.code : null,
       error_message: errorDetails ? errorDetails.message : null
     };
 
-    // Log the data to be updated
-    console.log("Data to update in messages_log:", dataToUpdate);
-
-    // Update the existing record
-    const { error: updateError } = await supabase
+    // Insert new record
+    const { error: insertError } = await supabase
       .from("messages_log")
-      .update(dataToUpdate)
-      .eq('original_wamid', messageId);
+      .insert([newStatusRecord]);
 
-    if (updateError) {
-      throw new Error(`Error updating status: ${updateError.message}`);
+    if (insertError) {
+      throw new Error(`Error inserting status: ${insertError.message}`);
     }
 
-    console.log(`Successfully inserted or updated status for message ID: ${messageId}`);
+    console.log(`Successfully inserted new status record for message ID: ${messageId}`);
   } catch (err) {
     console.error(`Error inserting status: ${err.message}`);
   }
