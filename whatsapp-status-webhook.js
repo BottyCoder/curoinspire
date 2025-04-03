@@ -50,10 +50,6 @@ async function insertStatusToDb(statusDetails) {
       throw new Error(`Error updating status: ${updateError.message}`);
     }
 
-    if (error) {
-      throw new Error(`Error inserting status: ${error.message}`);
-    }
-
     console.log(`Successfully inserted or updated status for message ID: ${messageId}`);
   } catch (err) {
     console.error(`Error inserting status: ${err.message}`);
