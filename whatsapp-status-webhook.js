@@ -17,25 +17,38 @@ async function insertStatusToDb(statusDetails) {
     // Convert Unix timestamp to ISO format
     const convertedTimestamp = new Date(timestamp * 1000).toISOString().slice(0, 19).replace("T", " ");
 
-    // Prepare data to insert or update
-    const dataToInsert = {
-      wa_id: messageId,
-      mobile_number: recipientId,
+    // Find the existing record by original_wamid
+    const { data: existingRecord, error: findError } = await supabase
+      .from("messages_log")
+      .select('wa_id')
+      .eq('original_wamid', messageId)
+      .single();
+
+    if (findError) {
+      console.error("Error finding existing record:", findError);
+      return;
+    }
+
+    // Prepare data to update
+    const dataToUpdate = {
       status: status,
-      timestamp: convertedTimestamp, // Store converted timestamp
+      status_timestamp: convertedTimestamp,
       error_code: errorDetails ? errorDetails.code : null,
-      error_message: errorDetails ? errorDetails.message : null,
-      client_guid: clientGuid || "Not Applicable", // Default value for missing client_guid
-      channel: "whatsapp", // Default channel value for WhatsApp messages
+      error_message: errorDetails ? errorDetails.message : null
     };
 
-    // Log the data to be inserted
-    console.log("Data to insert into messages_log:", dataToInsert);
+    // Log the data to be updated
+    console.log("Data to update in messages_log:", dataToUpdate);
 
-    // Use 'upsert' to insert new records or update existing ones based on the unique key (wa_id)
-    const { data, error } = await supabase
+    // Update the existing record
+    const { error: updateError } = await supabase
       .from("messages_log")
-      .upsert([dataToInsert], { onConflict: 'wa_id' });
+      .update(dataToUpdate)
+      .eq('original_wamid', messageId);
+
+    if (updateError) {
+      throw new Error(`Error updating status: ${updateError.message}`);
+    }
 
     if (error) {
       throw new Error(`Error inserting status: ${error.message}`);
