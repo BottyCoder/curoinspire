@@ -260,7 +260,7 @@ app.post("/receive-reply", async (req, res) => {
 
         // Forward the reply to Inspire with authentication in the body
         const inspireResponse = await axios.post(
-            "https://inspire-ohs.com/api/V3/WA/GetWaMsg",
+            "https://inspire.botforce.co.za/api/V3/WA/GetWaMsg",
             inspirePayload,
             {
                 headers: {
