@@ -94,7 +94,6 @@ app.post('/client-send-message', async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        const wa_id = uuidv4();
         const tracking_code = uuidv4();
         const timestampUTC = moment.utc().format();
 
@@ -155,7 +154,7 @@ app.post('/client-send-message', async (req, res) => {
 
         // Store message data, including `client_guid`, in Supabase
         const messageData = {
-            wa_id,
+            wa_id: wamid,
             original_wamid: wamid,
             tracking_code,
             client_guid,
