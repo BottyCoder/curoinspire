@@ -206,6 +206,7 @@ app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
     try {
         console.log(`🔍 GET request for latest tracking for ${recipient_number}`);
 
+        console.log("Looking up tracking code for number:", recipient_number);
         const { data, error } = await supabase
             .from("messages_log")
             .select("tracking_code")
@@ -213,13 +214,16 @@ app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
             .order("timestamp", { ascending: false })
             .limit(1)
             .single();
+        
+        console.log("Database response:", { data, error });
 
         if (error || !data) {
             console.error("❌ No tracking code found or error:", error);
-            return res.json({ Response: { success: false, error: "No tracking code found for this number" } });
+            return res.json({ success: false, error: "No tracking code found for this number" });
         }
 
-        return res.json({ Response: { success: true, tracking_code: data.tracking_code } });
+        console.log("Found tracking code:", data.tracking_code);
+        return res.json({ success: true, tracking_code: data.tracking_code });
     } catch (error) {
         console.error("❌ Error fetching latest tracking code:", error);
         res.status(500).json({ error: "Failed to fetch tracking code" });
