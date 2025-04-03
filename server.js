@@ -258,9 +258,13 @@ app.post("/receive-reply", async (req, res) => {
         console.log("🔍 Sending data to Inspire...");
         console.log("Inspire Payload:", inspirePayload);
 
-        // Forward the reply to Inspire with authentication in the body
+        // Forward the reply to Inspire production endpoint
+        const productionEndpoint = process.env.NODE_ENV === 'production' 
+            ? 'https://inspire.botforce.co.za/client-send-message'
+            : 'http://localhost:3000/client-send-message';
+            
         const inspireResponse = await axios.post(
-            "https://inspire.botforce.co.za/client-send-message",
+            productionEndpoint,
             inspirePayload,
             {
                 headers: {
