@@ -154,7 +154,6 @@ app.post('/client-send-message', async (req, res) => {
 
         // Store message data, including `client_guid`, in Supabase
         const messageData = {
-            wa_id: wamid,
             original_wamid: wamid,
             tracking_code,
             client_guid,
@@ -187,7 +186,6 @@ app.post('/client-send-message', async (req, res) => {
         res.status(200).json({ 
             success: true, 
             tracking_code: tracking_code,
-            wa_id: wamid, 
             wamid: wamid 
         });
     } catch (error) {
