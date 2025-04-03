@@ -35,7 +35,7 @@ async function insertStatusToDb(statusDetails) {
     // Use 'upsert' to insert new records or update existing ones based on the unique key (wa_id)
     const { data, error } = await supabase
       .from("messages_log")
-      .upsert([dataToInsert], { onConflict: ['wa_id'] });
+      .upsert([dataToInsert], { onConflict: 'wa_id' });
 
     if (error) {
       throw new Error(`Error inserting status: ${error.message}`);
