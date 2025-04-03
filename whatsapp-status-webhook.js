@@ -17,8 +17,11 @@ const insertStatusToDb = async (statusDetails) => {
   try {
     const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
 
-    // Convert Unix timestamp to ISO format
-    const convertedTimestamp = new Date(timestamp * 1000).toISOString();
+    // Convert Unix timestamp to ISO format for message timestamp
+    const messageTimestamp = new Date(timestamp * 1000).toISOString();
+    
+    // Use current time for status update timestamp
+    const currentTimestamp = new Date().toISOString();
 
     // Create new status record with available data
     const newStatusRecord = {
@@ -27,8 +30,8 @@ const insertStatusToDb = async (statusDetails) => {
       mobile_number: recipientId,
       channel: "whatsapp",
       status: status,
-      timestamp: convertedTimestamp,
-      status_timestamp: convertedTimestamp,
+      timestamp: messageTimestamp,        // Original message timestamp
+      status_timestamp: currentTimestamp, // When we received the status
       error_code: errorDetails ? errorDetails.code : null,
       error_message: errorDetails ? errorDetails.message : null
     };
