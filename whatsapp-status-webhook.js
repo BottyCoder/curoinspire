@@ -50,7 +50,10 @@ async function insertStatusToDb(statusDetails) {
 
 // Define the POST route for the webhook
 router.post('/', (req, res) => {
-  console.log("Received WhatsApp Status Webhook:", JSON.stringify(req.body, null, 2));
+  console.log("=== INCOMING WHATSAPP WEBHOOK ===");
+  console.log("Headers:", JSON.stringify(req.headers, null, 2));
+  console.log("Body:", JSON.stringify(req.body, null, 2));
+  console.log("================================");
 
   // If no body is received, log an error
   if (!req.body || Object.keys(req.body).length === 0) {
