@@ -214,14 +214,9 @@ app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
             .limit(1)
             .single();
 
-        if (error) {
-            console.error("❌ Database error:", error);
-            return res.status(500).json({ Response: { success: false, error: "Database error" } });
-        }
-
-        if (!data || !data.tracking_code) {
-            console.error("❌ No tracking code found for number:", recipient_number);
-            return res.status(404).json({ Response: { success: false, error: "No tracking code found for this number" } });
+        if (error || !data) {
+            console.error("❌ No tracking code found or error:", error);
+            return res.json({ Response: { success: false, error: "No tracking code found for this number" } });
         }
 
         return res.json({ Response: { success: true, tracking_code: data.tracking_code } });
