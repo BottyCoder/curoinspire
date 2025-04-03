@@ -106,7 +106,7 @@ app.post('/client-send-message', async (req, res) => {
         // Prepare WhatsApp Payload
         const whatsappPayload = {
             payload: {
-                name: "inspire_nodejs_chat",
+                name: "live_inspire_nodejs_chat",
                 components: [
                     {
                         type: "header",
@@ -135,7 +135,7 @@ app.post('/client-send-message', async (req, res) => {
         try {
             // Call WhatsApp API with correct authorization token
             const whatsappResponse = await axios.post(
-                "https://api.botforce.co.za/whatsapp-api/v1.0/customer/108412/bot/fa3bacde2da9424c/template",
+                "https://api.botforce.co.za/whatsapp-api/v1.0/customer/108412/bot/00b3417f58d643d3/template",
                 whatsappPayload,
                 {
                     headers: {
