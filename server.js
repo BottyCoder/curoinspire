@@ -42,7 +42,7 @@ app.use('/whatsapp-status-webhook', whatsappStatusWebhook); // Mount the router 
 // Add route handler for get-message-status
 app.get('/get-message-status', async (req, res) => {
     const { phone_number } = req.query;
-    
+
     if (!phone_number) {
         return res.status(400).json({ error: 'Phone number is required' });
     }
@@ -165,11 +165,11 @@ app.post('/client-send-message', async (req, res) => {
             status: "sent",
             timestamp: timestampUTC
         };
-        
+
         console.log("📝 Request for number:", recipient_number);
         console.log("📝 Generated tracking code:", tracking_code);
         console.log("📝 Attempting to store message with data:", messageData);
-        
+
         const { data: insertedData, error: insertError } = await supabase
             .from('messages_log')
             .insert([messageData])
@@ -179,7 +179,7 @@ app.post('/client-send-message', async (req, res) => {
             console.error("❌ Database insertion error:", insertError);
             throw new Error("Failed to store message in database");
         }
-        
+
         console.log("✅ Message stored in database. Tracking code:", tracking_code);
         console.log("✅ Full inserted data:", insertedData);
 
@@ -208,19 +208,23 @@ app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
 
         const { data, error } = await supabase
             .from("messages_log")
-            .select("*")
+            .select("tracking_code")
             .eq("mobile_number", recipient_number)
             .order("timestamp", { ascending: false })
             .limit(1)
             .single();
 
-        if (error || !data) {
-            console.error("❌ No tracking code found or error:", error);
-            return res.status(404).json({ error: "No tracking code found for this number" });
+        if (error) {
+            console.error("❌ Database error:", error);
+            return res.status(500).json({ Response: { success: false, error: "Database error" } });
         }
 
-        console.log("📝 Found tracking data:", data);
-        return res.json({ success: true, tracking_code: data.tracking_code });
+        if (!data || !data.tracking_code) {
+            console.error("❌ No tracking code found for number:", recipient_number);
+            return res.status(404).json({ Response: { success: false, error: "No tracking code found for this number" } });
+        }
+
+        return res.json({ Response: { success: true, tracking_code: data.tracking_code } });
     } catch (error) {
         console.error("❌ Error fetching latest tracking code:", error);
         res.status(500).json({ error: "Failed to fetch tracking code" });
@@ -243,7 +247,7 @@ app.post("/receive-reply", async (req, res) => {
 
     try {
         console.log("🔍 Fetching client_guid & original_wamid from the database using tracking_code:", tracking_code);
-        
+
         // Retrieve client_guid and original_wamid from the database using tracking_code
         const { data, error } = await supabase
             .from("messages_log")
@@ -282,7 +286,7 @@ app.post("/receive-reply", async (req, res) => {
         const productionEndpoint = process.env.NODE_ENV === 'production' 
             ? 'https://inspire.botforce.co.za/client-send-message'
             : 'http://localhost:3000/client-send-message';
-            
+
         const inspireResponse = await axios.post(
             productionEndpoint,
             inspirePayload,
