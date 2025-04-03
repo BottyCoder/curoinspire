@@ -203,7 +203,7 @@ app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
 
         const { data, error } = await supabase
             .from("messages_log")
-            .select("tracking_code")
+            .select("*")
             .eq("mobile_number", recipient_number)
             .order("timestamp", { ascending: false })
             .limit(1)
@@ -214,6 +214,7 @@ app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
             return res.status(404).json({ error: "No tracking code found for this number" });
         }
 
+        console.log("📝 Found tracking data:", data);
         return res.json({ success: true, tracking_code: data.tracking_code });
     } catch (error) {
         console.error("❌ Error fetching latest tracking code:", error);
