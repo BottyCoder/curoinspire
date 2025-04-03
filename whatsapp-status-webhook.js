@@ -10,7 +10,10 @@ router.use(express.json());
 
 // Function to insert status into the database
 // Function to insert or update the status in the database
-async function insertStatusToDb(statusDetails) {
+const insertStatusToDb = async (statusDetails) => {
+  const environment = process.env.NODE_ENV || 'development';
+  console.log(`Processing status update in ${environment} environment`);
+
   try {
     const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
 
@@ -61,7 +64,7 @@ async function insertStatusToDb(statusDetails) {
   } catch (err) {
     console.error(`Error inserting status: ${err.message}`);
   }
-}
+};
 
 
 // Define the POST route for the webhook
