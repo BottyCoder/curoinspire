@@ -1,0 +1,156 @@
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+Incoming request: POST /whatsapp-status-webhook
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+Received WhatsApp Status Webhook: {
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"object": "whatsapp_business_account",
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"entry": [
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+{
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"id": "123456789",
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"changes": [
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+{
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"value": {
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"statuses": [
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+{
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"id": "wamid.test123",
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"status": "delivered",
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"timestamp": "1680512400",
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"recipient_id": "27821234567",
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+"errors": []
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+}
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+]
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+}
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+}
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+]
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+}
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+]
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+}
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+Message ID: wamid.test123
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+Status: delivered
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+Timestamp: 1680512400
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+Recipient ID: 27821234567
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+Data to insert into messages_log: {
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+wa_id: 'wamid.test123',
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+mobile_number: '27821234567',
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+status: 'delivered',
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+timestamp: '2023-04-03 09:00:00',
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+error_code: null,
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+error_message: null,
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+client_guid: 'Not Applicable',
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+channel: 'whatsapp'
+2025-04-03 08:42:23.22
+8be1e1c4
+User
+}
+2025-04-03 08:42:23.77
+8be1e1c4
+User
+Error inserting status: Error inserting status: there is no unique or exclusion constraint matching the ON CONFLICT specification
