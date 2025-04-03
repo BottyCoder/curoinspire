@@ -172,7 +172,7 @@ app.post('/client-send-message', async (req, res) => {
         
         const { data: insertedData, error: insertError } = await supabase
             .from('messages_log')
-            .upsert([messageData], { onConflict: 'wa_id' })
+            .insert([messageData])
             .select();
 
         if (insertError) {
