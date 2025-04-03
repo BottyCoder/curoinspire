@@ -34,14 +34,17 @@ const insertStatusToDb = async (statusDetails) => {
     };
 
     // Insert new record
-    const { error: insertError } = await supabase
+    const { data, error: insertError } = await supabase
       .from("messages_log")
-      .insert([newStatusRecord]);
+      .insert([newStatusRecord])
+      .select();
 
     if (insertError) {
+      console.error('Database insertion error:', insertError);
       throw new Error(`Error inserting status: ${insertError.message}`);
     }
 
+    console.log('Inserted record:', data);
     console.log(`Successfully inserted new status record for message ID: ${messageId}`);
   } catch (err) {
     console.error(`Error inserting status: ${err.message}`);
