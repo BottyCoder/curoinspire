@@ -22,12 +22,13 @@ const insertStatusToDb = async (statusDetails) => {
 
     // Create new status record with available data
     const newStatusRecord = {
-      wa_id: uuidv4(),
+      wa_id: messageId,
       original_wamid: messageId,
       mobile_number: recipientId,
       channel: "whatsapp",
       status: status,
       timestamp: convertedTimestamp,
+      status_timestamp: convertedTimestamp,
       error_code: errorDetails ? errorDetails.code : null,
       error_message: errorDetails ? errorDetails.message : null
     };
