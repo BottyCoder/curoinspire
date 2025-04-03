@@ -101,7 +101,7 @@ router.post('/', (req, res) => {
 
               // Insert status into the database
               insertStatusToDb({
-                messageId,
+                messageId: id, // Using the original message ID from WhatsApp
                 recipientId: recipient_id,
                 status,
                 timestamp,
