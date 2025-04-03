@@ -209,21 +209,26 @@ app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
         console.log("Looking up tracking code for number:", recipient_number);
         const { data, error } = await supabase
             .from("messages_log")
-            .select("tracking_code")
+            .select("tracking_code, timestamp")
             .eq("mobile_number", recipient_number)
             .order("timestamp", { ascending: false })
-            .limit(1)
-            .single();
+            .limit(1);
         
         console.log("Database response:", { data, error });
 
-        if (error || !data) {
-            console.error("❌ No tracking code found or error:", error);
+        if (error) {
+            console.error("❌ Database error:", error);
+            return res.json({ success: false, error: "Database error occurred" });
+        }
+
+        if (!data || data.length === 0) {
+            console.error("❌ No tracking code found");
             return res.json({ success: false, error: "No tracking code found for this number" });
         }
 
-        console.log("Found tracking code:", data.tracking_code);
-        return res.json({ success: true, tracking_code: data.tracking_code });
+        const latestRecord = data[0];
+        console.log("Found tracking code:", latestRecord.tracking_code);
+        return res.json({ success: true, tracking_code: latestRecord.tracking_code });
     } catch (error) {
         console.error("❌ Error fetching latest tracking code:", error);
         res.status(500).json({ error: "Failed to fetch tracking code" });
