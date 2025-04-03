@@ -20,30 +20,11 @@ const insertStatusToDb = async (statusDetails) => {
     // Convert Unix timestamp to ISO format
     const convertedTimestamp = new Date(timestamp * 1000).toISOString();
 
-    // Find the original message to copy its data
-    const { data: originalMessage, error: findError } = await supabase
-      .from("messages_log")
-      .select('*')
-      .or(`original_wamid.eq.${messageId},wa_id.eq.${messageId}`)
-      .order('timestamp', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (findError) {
-      console.error("Error finding original message:", findError);
-      return;
-    }
-
-    // Create new status record
+    // Create new status record with available data
     const newStatusRecord = {
-      wa_id: uuidv4(), // Generate new unique ID
+      wa_id: uuidv4(),
       original_wamid: messageId,
-      tracking_code: originalMessage?.tracking_code,
-      client_guid: originalMessage?.client_guid,
-      mobile_number: originalMessage?.mobile_number,
-      customer_name: originalMessage?.customer_name,
-      message: originalMessage?.message,
-      customer_response: originalMessage?.customer_response,
+      mobile_number: recipientId,
       channel: "whatsapp",
       status: status,
       timestamp: convertedTimestamp,
