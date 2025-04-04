@@ -1,0 +1,144 @@
+2025-04-04 15:39:40.63
+7ca35357
+User
+error_code: null,
+2025-04-04 15:39:40.63
+7ca35357
+User
+}
+2025-04-04 15:39:40.63
+7ca35357
+User
+]
+2025-04-04 15:39:45.93
+7ca35357
+User
+Incoming request: POST /whatsapp-status-webhook
+2025-04-04 15:39:45.93
+7ca35357
+User
+=== INCOMING WHATSAPP WEBHOOK ===
+2025-04-04 15:39:45.93
+7ca35357
+User
+Headers: {
+2025-04-04 15:39:45.93
+7ca35357
+User
+"host": "inspire.botforce.co.za",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"user-agent": "python-requests/2.26.0",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"content-length": "384",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"accept": "*/*",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"accept-encoding": "gzip, deflate",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"content-type": "application/json",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"server-timing": "depproxy;dur=1743773985927, pid1req;dur=1743773985932",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"traceparent": "00-bbeb5143ba7e3a7dbef68cb7790b5360-8ecf71c6f8af0d50-00",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"via": "1.1 google",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-cloud-trace-context": "bbeb5143ba7e3a7dbef68cb7790b5360/10290568772954557776",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-forwarded-for": "43.204.103.217, 34.111.179.208, 35.191.27.150,35.193.50.36",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-forwarded-host": "inspire.botforce.co.za",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-forwarded-proto": "https",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-replit-user-bio": "",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-replit-user-id": "",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-replit-user-name": "",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-replit-user-profile-image": "",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-replit-user-roles": "",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-replit-user-teams": "",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"x-replit-user-url": ""
+2025-04-04 15:39:45.93
+7ca35357
+User
+}
+2025-04-04 15:39:45.93
+7ca35357
+User
+Body: {
+2025-04-04 15:39:45.93
+7ca35357
+User
+"object": "whatsapp_business_account",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"entry": [
+2025-04-04 15:39:45.93
+7ca35357
+User
+{
+2025-04-04 15:39:45.93
+7ca35357
+User
+"id": "534770752614324",
+2025-04-04 15:39:45.93
+7ca35357
+User
+"changes": [
+2025-04-04 15:39:45.93
+7ca35357
+User
+{
+2025-04-04 15:39:45.93
+7ca35357
+User
+"value": {
+2025-04-04 15:39:45.93
+7ca35357
+User
+"messaging_product": "whatsapp",
