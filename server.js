@@ -290,8 +290,8 @@ app.post("/receive-reply", async (req, res) => {
 
         // Forward the reply to Inspire production endpoint
         const productionEndpoint = process.env.NODE_ENV === 'production' 
-            ? 'https://inspire.botforce.co.za/api/V3/WA/GetWaMsg'
-            : 'https://inspire.botforce.co.za/api/V3/WA/GetWaMsg';
+            ? 'https://inspire-ohs.com/api/V3/WA/GetWaMsg'
+            : 'https://inspire-ohs.com/api/V3/WA/GetWaMsg';
 
         const inspireResponse = await axios.post(
             productionEndpoint,
