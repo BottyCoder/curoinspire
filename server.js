@@ -211,6 +211,8 @@ app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
             .from("messages_log")
             .select("tracking_code, timestamp")
             .eq("mobile_number", recipient_number)
+            .eq("status", "sent")
+            .not("tracking_code", "is", null)
             .order("timestamp", { ascending: false })
             .limit(1);
         
