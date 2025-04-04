@@ -17,6 +17,62 @@ const insertStatusToDb = async (statusDetails) => {
   try {
     const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
 
+
+// Function to handle location messages
+const handleLocationMessage = async (locationData) => {
+  try {
+    const { messageId, recipientId, latitude, longitude, name, address } = locationData;
+    const timestamp = new Date().toISOString();
+
+    // Store in Supabase
+    const { data, error } = await supabase
+      .from("messages_log")
+      .insert([{
+        original_wamid: messageId,
+        mobile_number: recipientId,
+        channel: "whatsapp",
+        message_type: "location",
+        latitude,
+        longitude,
+        location_name: name,
+        location_address: address,
+        timestamp
+      }]);
+
+    if (error) throw error;
+
+    // Forward to Inspire
+    const inspirePayload = {
+      ClientGuid: data[0].client_guid,
+      Timestamp: timestamp,
+      Channel: "whatsapp",
+      MessageType: "location",
+      Location: {
+        Latitude: latitude,
+        Longitude: longitude,
+        Name: name,
+        Address: address
+      },
+      apiKey: process.env.INSPIRE_API_KEY
+    };
+
+    await axios.post(
+      "https://inspire-ohs.com/api/V3/WA/GetWaMsg",
+      inspirePayload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.INSPIRE_API_KEY}`
+        }
+      }
+    );
+
+    console.log("Location message processed successfully");
+  } catch (err) {
+    console.error("Error handling location message:", err);
+  }
+};
+
     // Convert Unix timestamp to ISO format for message timestamp
     const messageTimestamp = new Date(timestamp * 1000).toISOString();
     
@@ -60,6 +116,24 @@ router.post('/', (req, res) => {
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Body:", JSON.stringify(req.body, null, 2));
   console.log("================================");
+
+  // Handle location messages
+  if (req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.location) {
+    const location = req.body.entry[0].changes[0].value.messages[0].location;
+    const messageId = req.body.entry[0].changes[0].value.messages[0].id;
+    const recipientId = req.body.entry[0].changes[0].value.messages[0].from;
+    
+    console.log("Received location:", location);
+    
+    handleLocationMessage({
+      messageId,
+      recipientId,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      name: location.name || null,
+      address: location.address || null
+    });
+  }
 
   // If no body is received, log an error
   if (!req.body || Object.keys(req.body).length === 0) {
