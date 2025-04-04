@@ -215,7 +215,7 @@ app.get("/botforce-get-latest-tracking/:recipient_number", async (req, res) => {
             .not("tracking_code", "is", null)
             .order("timestamp", { ascending: false })
             .limit(1);
-        
+
         console.log("Database response:", { data, error });
 
         if (error) {
@@ -281,7 +281,7 @@ app.post("/receive-reply", async (req, res) => {
             Timestamp: timestamp,
             Body: cleanedReplyMessage,
             Channel: "whatsapp",
-         apiKey: process.env.INSPIRE_API_KEY
+            apiKey: process.env.INSPIRE_API_KEY
 
         };
 
@@ -290,15 +290,16 @@ app.post("/receive-reply", async (req, res) => {
 
         // Forward the reply to Inspire production endpoint
         const productionEndpoint = process.env.NODE_ENV === 'production' 
-            ? 'https://inspire.botforce.co.za/client-send-message'
-            : 'http://localhost:3000/client-send-message';
+            ? 'https://inspire.botforce.co.za/api/V3/WA/GetWaMsg'
+            : 'https://inspire.botforce.co.za/api/V3/WA/GetWaMsg';
 
         const inspireResponse = await axios.post(
             productionEndpoint,
             inspirePayload,
             {
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${process.env.INSPIRE_API_KEY}`
                 }
             }
         );
