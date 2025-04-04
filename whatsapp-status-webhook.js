@@ -135,7 +135,7 @@ router.post('/', async (req, res) => {
 
       if (trackingData?.tracking_code) {
         // Forward to receive-reply endpoint
-        await axios.post("/receive-reply", {
+        await axios.post("http://0.0.0.0:3000/receive-reply", {
           tracking_code: trackingData.tracking_code,
           reply_message: text
         });
