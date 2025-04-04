@@ -111,11 +111,39 @@ const handleLocationMessage = async (locationData) => {
 
 
 // Define the POST route for the webhook
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   console.log("=== INCOMING WHATSAPP WEBHOOK ===");
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Body:", JSON.stringify(req.body, null, 2));
   console.log("================================");
+
+  // Handle text messages
+  if (req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text) {
+    const message = req.body.entry[0].changes[0].value.messages[0];
+    const text = message.text.body;
+    const from = message.from;
+    
+    try {
+      // Get tracking code from database
+      const { data: trackingData } = await supabase
+        .from("messages_log")
+        .select("tracking_code")
+        .eq("mobile_number", from)
+        .order("timestamp", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (trackingData?.tracking_code) {
+        // Forward to receive-reply endpoint
+        await axios.post("/receive-reply", {
+          tracking_code: trackingData.tracking_code,
+          reply_message: text
+        });
+      }
+    } catch (err) {
+      console.error("Error processing text message:", err);
+    }
+  }
 
   // Handle location messages
   if (req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.location) {
