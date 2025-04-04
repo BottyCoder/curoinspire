@@ -45,9 +45,6 @@ function sanitizeAndReplaceGreetings(text) {
     if (!text) return "";
     // Remove \r and \n
     let cleaned = text.replace(/[\r\n]+/g, " ");
-    // Replace "hi" or "hello" as whole words (case-insensitive)
-    const greetingRegex = /\b(hi|hello)\b/gi;
-    cleaned = cleaned.replace(greetingRegex, "[replaced]");
     return cleaned;
 }
 
