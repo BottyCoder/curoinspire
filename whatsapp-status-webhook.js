@@ -153,13 +153,15 @@ router.post('/', async (req, res) => {
     
     console.log("Received location:", location);
     
-    handleLocationMessage({
+    await handleLocationMessage({
       messageId,
       recipientId,
       latitude: location.latitude,
       longitude: location.longitude,
       name: location.name || null,
       address: location.address || null
+    }).catch(err => {
+      console.error("Failed to process location:", err);
     });
   }
 
