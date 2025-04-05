@@ -113,9 +113,9 @@ const handleLocationMessage = async (locationData) => {
 
     // Create new status record with available data
     const newStatusRecord = {
-      original_wamid: messageId, // Use WAMID directly from WhatsApp
+      original_wamid: messageId, // Store raw WAMID from webhook
       mobile_number: recipientId,
-      channel: "whatsapp",
+      channel: "whatsapp", 
       status: status,
       timestamp: messageTimestamp,        // Original message timestamp
       status_timestamp: currentTimestamp, // When we received the status
@@ -232,7 +232,7 @@ router.post('/', async (req, res) => {
 
               // Insert status into the database with the original wamid
               insertStatusToDb({
-                messageId: wamid, // Using the wamid directly from WhatsApp
+                messageId: wamid, // Direct WAMID from WhatsApp webhook
                 recipientId: recipient_id,
                 status,
                 timestamp,
