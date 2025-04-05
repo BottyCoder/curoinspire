@@ -4,10 +4,10 @@ const moment = require('moment-timezone');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 
-// Initialize Supabase with service role
+// Initialize Supabase with public role 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  process.env.SUPABASE_ANON_KEY, // Use anon/public key since RLS policies are set for public role
   {
     auth: { persistSession: false }
   }
