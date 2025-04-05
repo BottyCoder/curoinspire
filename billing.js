@@ -32,7 +32,7 @@ router.get('/stats', checkAuth, async (req, res) => {
     const { data: billingRecords } = await supabase
       .from('billing_records')
       .select('*')
-      .gte('message_timestamp', startOfMonth.toISOString());
+      .gte('message_timestamp', startOfMonth.format('YYYY-MM-DD HH:mm:ss.SSS'));
 
     // Initialize default values
     const totalMessages = billingRecords?.length || 0;
