@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Billing Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">WhatsApp Billing Dashboard</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Total Messages</h2>
+                <p id="total-messages" class="text-3xl font-bold text-blue-600">-</p>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Cost per Message</h2>
+                <p id="cost-per-message" class="text-3xl font-bold text-green-600">-</p>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Total Cost</h2>
+                <div class="flex gap-4">
+                    <div>
+                        <p class="text-sm text-gray-600">USD</p>
+                        <p id="total-cost-usd" class="text-3xl font-bold text-purple-600">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">ZAR</p>
+                        <p id="total-cost-zar" class="text-3xl font-bold text-purple-600">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchData() {
+            try {
+                const [statsRes, rateRes] = await Promise.all([
+                    fetch('/billing/stats'),
+                    fetch('/billing/exchange-rate')
+                ]);
+                
+                const stats = await statsRes.json();
+                const { rate } = await rateRes.json();
+                
+                document.getElementById('total-messages').textContent = stats.totalMessages;
+                document.getElementById('cost-per-message').textContent = `$${stats.costPerMessage}`;
+                document.getElementById('total-cost-usd').textContent = `$${stats.totalCost.toFixed(2)}`;
+                document.getElementById('total-cost-zar').textContent = `R${(stats.totalCost * rate).toFixed(2)}`;
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        fetchData();
+        setInterval(fetchData, 60000); // Refresh every minute
+    </script>
+</body>
+</html>

@@ -6,7 +6,8 @@ const { createClient } = require('@supabase/supabase-js');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment-timezone');
-const whatsappStatusWebhook = require('./whatsapp-status-webhook'); // Import the webhook router
+const whatsappStatusWebhook = require('./whatsapp-status-webhook');
+const billingRoutes = require('./billing'); // Import the webhook router
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Make sure the port is configurable from .env
@@ -37,7 +38,8 @@ app.get('/', (req, res) => {
 });
 
 // Mount the /whatsapp-status-webhook route correctly
-app.use('/whatsapp-status-webhook', whatsappStatusWebhook); // Mount the router for the webhook
+app.use('/whatsapp-status-webhook', whatsappStatusWebhook);
+app.use('/billing', billingRoutes); // Mount the router for the webhook
 
 // Add route handler for get-message-status
 app.get('/get-message-status', async (req, res) => {
