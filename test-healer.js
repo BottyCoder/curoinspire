@@ -1,5 +1,6 @@
 
-const codeHealer = require('./utils/codeHealer');
+const CodeHealer = require('./utils/codeHealer');
+const codeHealer = new CodeHealer();
 
 // Test run of the CodeHealer
 async function testHealer() {
