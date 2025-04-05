@@ -107,8 +107,27 @@ router.get('/stats', checkAuth, async (req, res) => {
 
     // Calculate metrics
     for (const [user, messages] of Object.entries(sessions)) {
-      const userSessions = new Set(messages.map(m => m.sessionStart.format()));
-      billableSessions += userSessions.size;
+      // Sort messages by timestamp
+      messages.sort((a, b) => a.timestamp - b.timestamp);
+      
+      // Group into sessions with 23h50m window
+      const sessionGroups = [];
+      let currentSession = [messages[0]];
+      
+      for (let i = 1; i < messages.length; i++) {
+        const timeDiff = messages[i].timestamp.diff(currentSession[0].timestamp, 'minutes');
+        if (timeDiff <= 1430) { // 23 hours and 50 minutes in minutes
+          currentSession.push(messages[i]);
+        } else {
+          sessionGroups.push(currentSession);
+          currentSession = [messages[i]];
+        }
+      }
+      if (currentSession.length > 0) {
+        sessionGroups.push(currentSession);
+      }
+
+      billableSessions += sessionGroups.length;
       
       // Sum session costs for all messages
       messages.forEach(msg => {
