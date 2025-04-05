@@ -64,29 +64,29 @@ router.get('/stats', checkAuth, async (req, res) => {
       const hasUtility = billingRecords.some(record => parseFloat(record.cost_utility) > 0);
       const billableSessions = hasUtility ? Math.ceil(totalMessages / 24) : 0;
 
-      res.json({
-        totalMessages,
-        billableSessions,
-        monthlyActiveUsers: 0, // Placeholder for MAU calculation
-        sessionCost,
-        mauCost,
-        totalCost,
-        startDate: startOfMonth.format(),
-        endDate: now.format()
-      });
-    } else {
-      res.json({
-        totalMessages: 0,
-        billableSessions: 0,
-        monthlyActiveUsers: 0,
-        sessionCost: 0,
-        mauCost: 0,
-        totalCost: 0,
-        startDate: startOfMonth.format(),
-        endDate: now.format()
-      });
-    }
-    });
+      if (billingRecords && billingRecords.length > 0) {
+        res.json({
+          totalMessages,
+          billableSessions,
+          monthlyActiveUsers: 0, // Placeholder for MAU calculation
+          sessionCost,
+          mauCost,
+          totalCost,
+          startDate: startOfMonth.format(),
+          endDate: now.format()
+        });
+      } else {
+        res.json({
+          totalMessages: 0,
+          billableSessions: 0,
+          monthlyActiveUsers: 0,
+          sessionCost: 0,
+          mauCost: 0,
+          totalCost: 0,
+          startDate: startOfMonth.format(),
+          endDate: now.format()
+        });
+      }
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
