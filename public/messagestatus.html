@@ -295,10 +295,10 @@
 
     function renderStatus(current) {
       const statuses = ['sent', 'delivered', 'read', 'failed'];
-      
+
       return statuses.map(status => {
         let shouldHighlight = false;
-        
+
         if (current === 'failed') {
           shouldHighlight = status === 'failed';
         } else if (current === 'read') {
@@ -308,7 +308,7 @@
         } else if (current === 'sent') {
           shouldHighlight = status === 'sent';
         }
-          
+
         return `
           <span class="status-badge ${shouldHighlight ? 'highlight-status' : 'status-default'}">
             ${status.toUpperCase()}
