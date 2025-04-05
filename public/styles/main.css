@@ -24,6 +24,12 @@ body {
   padding: 2rem 1rem;
 }
 
+.billing-period {
+    font-size: 1.1rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+}
+
 .header {
   display: flex;
   justify-content: space-between;

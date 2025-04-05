@@ -11,6 +11,9 @@
     <div class="dashboard-container">
         <div class="header">
             <h1>Billing Dashboard</h1>
+            <div id="billing-period" class="billing-period">
+                Billing Period: <span id="current-period">Loading...</span>
+            </div>
             <div class="exchange-rate">
                 Exchange Rate: <span id="exchange-rate">1 USD = -- ZAR</span><br>
                 <span class="small-text">Excludes bank charges</span>
@@ -93,7 +96,14 @@
             }
         });
 
+        function formatBillingPeriod() {
+            const now = new Date();
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            return `${months[now.getMonth()]} ${now.getFullYear()}`;
+        }
+
         async function fetchData() {
+            document.getElementById('current-period').textContent = formatBillingPeriod();
             try {
                 const [statsRes, rateRes] = await Promise.all([
                     fetch('/billing/stats'),
