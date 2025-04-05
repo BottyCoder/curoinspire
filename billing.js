@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const moment = require('moment-timezone');
@@ -9,7 +8,7 @@ const path = require('path');
 const checkAuth = (req, res, next) => {
   // Temporarily bypass auth for testing
   return next();
-  
+
   // TODO: Implement proper auth later
   // const userId = req.headers['x-replit-user-id'];
   // const allowedUsers = ['39187091']; 
@@ -37,7 +36,7 @@ router.get('/stats', checkAuth, async (req, res) => {
   try {
     const now = moment();
     const startOfMonth = now.clone().startOf('month');
-    
+
     const { data: billingRecords } = await supabase
       .from('billing_records')
       .select('*')
@@ -54,7 +53,7 @@ router.get('/stats', checkAuth, async (req, res) => {
       totalCost = billingRecords.reduce((sum, record) => (
         sum + (parseFloat(record.total_cost) || 0)
       ), 0);
-      
+
       // Calculate session costs (utility)
       sessionCost = billingRecords.reduce((sum, record) => (
         sum + (parseFloat(record.cost_utility) || 0)
@@ -90,6 +89,10 @@ router.get('/stats', checkAuth, async (req, res) => {
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch stats' });
     }
+  } catch (error) {
+    console.error("Error in /stats route:", error); //Added for better error handling
+    res.status(500).json({ error: 'An unexpected error occurred' });
+  }
 });
 
 module.exports = router;
