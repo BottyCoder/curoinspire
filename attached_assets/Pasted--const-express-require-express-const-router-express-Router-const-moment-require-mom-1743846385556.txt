@@ -1,0 +1,93 @@
+
+const express = require('express');
+const router = express.Router();
+const moment = require('moment-timezone');
+const supabase = require('../utils/supabase');
+const path = require('path');
+
+// Middleware to check if user is authenticated
+const checkAuth = (req, res, next) => {
+  const userId = req.headers['x-replit-user-id'];
+  // Add allowed user IDs here
+  const allowedUsers = ['39187091', '189']; // Add both user IDs for access
+  
+  if (!userId || !allowedUsers.includes(userId)) {
+    return res.status(401).send('Unauthorized');
+  }
+  next();
+};
+
+router.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/billing.html'));
+});
+
+// Protected route
+// Add exchange rate endpoint
+router.get('/exchange-rate', checkAuth, async (req, res) => {
+  try {
+    const axios = require('axios');
+    const response = await axios.get('https://open.er-api.com/v6/latest/USD');
+    console.log('Exchange rate API response:', response.data);
+    
+    if (!response.data || !response.data.rates || typeof response.data.rates.ZAR !== 'number') {
+      throw new Error(`Invalid rate format. Received: ${JSON.stringify(response.data)}`);
+    }
+    
+    res.json({ rate: response.data.rates.ZAR });
+  } catch (error) {
+    console.error('Exchange rate error:', error.message);
+    if (error.response) {
+      console.error('API Response:', error.response.data);
+    }
+    res.status(500).json({ error: 'Failed to fetch exchange rate', details: error.message });
+  }
+});
+
+router.get('/stats', checkAuth, async (req, res) => {
+  try {
+    const now = moment();
+    const startOfMonth = now.clone().startOf('month');
+    
+    const { data: messages } = await supabase
+      .from('messages_log')
+      .select('*')
+      .gte('created_at', startOfMonth.toISOString())
+      .order('created_at', { ascending: true });
+
+    const { data: sessions } = await supabase
+      .from('billing_sessions')
+      .select('*')
+      .gte('session_start', startOfMonth.toISOString());
+
+    const { data: mauCharges } = await supabase
+      .from('monthly_user_charges')
+      .select('*')
+      .eq('charge_month', startOfMonth.format('YYYY-MM-DD'));
+
+    const billableSessions = sessions?.length || 0;
+    const mauCount = mauCharges?.filter(c => c.mau_fee_charged)?.length || 0;
+    
+    const sessionCost = billableSessions * 0.0176;
+    const mauCost = mauCount * 0.06;
+    const totalCost = sessionCost + mauCost;
+
+    // Format costs to 2 decimal places
+    const formattedSessionCost = sessionCost.toFixed(2);
+    const formattedMauCost = mauCost.toFixed(2);
+    const formattedTotalCost = totalCost.toFixed(2);
+
+    res.json({
+      totalMessages: messages?.length || 0,
+      billableSessions: billableSessions,
+      mauCount: mauCount,
+      sessionCost: formattedSessionCost,
+      mauCost: formattedMauCost,
+      totalCost: formattedTotalCost
+    });
+  } catch (error) {
+    console.error('Billing stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+module.exports = router;
