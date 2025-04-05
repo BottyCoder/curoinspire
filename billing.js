@@ -38,19 +38,26 @@ router.get('/stats', checkAuth, async (req, res) => {
     const now = moment();
     const startOfMonth = now.clone().startOf('month');
     
-    const { data: messages } = await supabase
-      .from('messages_log')
+    const { data: billingRecords } = await supabase
+      .from('billing_records')
       .select('*')
-      .gte('timestamp', startOfMonth.toISOString());
+      .gte('message_timestamp', startOfMonth.toISOString());
 
-    // Calculate costs
-    const totalMessages = messages?.length || 0;
-    const costPerMessage = 0.01; // $0.01 per message
-    const totalCost = totalMessages * costPerMessage;
+    // Calculate totals
+    const totalMessages = billingRecords?.length || 0;
+    let totalCost = 0;
+    let hasUtility = false;
+
+    if (billingRecords && billingRecords.length > 0) {
+      totalCost = billingRecords.reduce((sum, record) => sum + parseFloat(record.total_cost), 0);
+      // Check if any record has utility cost
+      hasUtility = billingRecords.some(record => parseFloat(record.cost_utility) > 0);
+    }
 
     res.json({
       totalMessages,
-      costPerMessage,
+      billableSessions: hasUtility ? Math.ceil(totalMessages / 24) : 0,
+      monthlyActiveUsers: 0, // This will need separate calculation if required
       totalCost,
       startDate: startOfMonth.format(),
       endDate: now.format()
