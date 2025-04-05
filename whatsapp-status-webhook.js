@@ -18,22 +18,22 @@ const insertStatusToDb = async (statusDetails) => {
     const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
     const messageTime = new Date();
 
+    // First check if user was already charged MAU this month
+    const startOfMonth = new Date(messageTime.getFullYear(), messageTime.getMonth(), 1);
+    const { data: existingMAU } = await supabase
+      .from('billing_records')
+      .select('id')
+      .eq('mobile_number', recipientId)
+      .eq('is_mau_charged', true)
+      .gte('message_month', startOfMonth.toISOString())
+      .limit(1);
+
+    const shouldChargeMau = !existingMAU || existingMAU.length === 0;
+    const mauCost = shouldChargeMau ? 0.06 : 0;
+    const totalCost = 0.0076 + 0.01 + mauCost; // utility + carrier + mau
+
     const { error: billingError } = await supabase
       .from('billing_records')
-      // First check if user was already charged MAU this month
-      const startOfMonth = new Date(messageTime.getFullYear(), messageTime.getMonth(), 1);
-      const { data: existingMAU } = await supabase
-        .from('billing_records')
-        .select('id')
-        .eq('mobile_number', recipientId)
-        .eq('is_mau_charged', true)
-        .gte('message_month', startOfMonth.toISOString())
-        .limit(1);
-
-      const shouldChargeMau = !existingMAU || existingMAU.length === 0;
-      const mauCost = shouldChargeMau ? 0.06 : 0;
-      const totalCost = 0.0076 + 0.01 + mauCost; // utility + carrier + mau
-
       .insert([{
         mobile_number: recipientId,
         whatsapp_message_id: messageId,
