@@ -113,11 +113,15 @@ router.get('/stats', checkAuth, async (req, res) => {
       // Count unique mobile numbers for MAU
       monthlyActiveUsers = Object.keys(sessions).length;
 
+      // Sum session costs for all messages
       messages.forEach(msg => {
-        sessionCost += parseFloat(msg.cost_utility || 0) + parseFloat(msg.cost_carrier || 0);
-        mauCost += parseFloat(msg.cost_mau || 0);
-        totalCost += parseFloat(msg.total_cost || 0);
+        sessionCost += parseFloat(msg.costs.utility || 0) + parseFloat(msg.costs.carrier || 0);
       });
+
+      // Only count MAU cost once per user if they were charged
+      if (messages.some(msg => msg.is_mau_charged)) {
+        mauCost += parseFloat(messages[0].costs.mau || 0);
+      }
     }
 
     res.json({
