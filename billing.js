@@ -8,14 +8,6 @@ const path = require('path');
 const checkAuth = (req, res, next) => {
   // Temporarily bypass auth for testing
   return next();
-
-  // TODO: Implement proper auth later
-  // const userId = req.headers['x-replit-user-id'];
-  // const allowedUsers = ['39187091']; 
-  // if (!userId || !allowedUsers.includes(userId)) {
-  //   return res.status(401).send('Unauthorized');
-  // }
-  // next();
 };
 
 router.get('/', (req, res) => {
@@ -42,7 +34,7 @@ router.get('/stats', checkAuth, async (req, res) => {
       .select('*')
       .gte('message_timestamp', startOfMonth.toISOString());
 
-    // Calculate totals
+    // Initialize default values
     const totalMessages = billingRecords?.length || 0;
     let totalCost = 0;
     let sessionCost = 0;
@@ -63,35 +55,31 @@ router.get('/stats', checkAuth, async (req, res) => {
       const hasUtility = billingRecords.some(record => parseFloat(record.cost_utility) > 0);
       const billableSessions = hasUtility ? Math.ceil(totalMessages / 24) : 0;
 
-      if (billingRecords && billingRecords.length > 0) {
-        res.json({
-          totalMessages,
-          billableSessions,
-          monthlyActiveUsers: 0, // Placeholder for MAU calculation
-          sessionCost,
-          mauCost,
-          totalCost,
-          startDate: startOfMonth.format(),
-          endDate: now.format()
-        });
-      } else {
-        res.json({
-          totalMessages: 0,
-          billableSessions: 0,
-          monthlyActiveUsers: 0,
-          sessionCost: 0,
-          mauCost: 0,
-          totalCost: 0,
-          startDate: startOfMonth.format(),
-          endDate: now.format()
-        });
-      }
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch stats' });
+      res.json({
+        totalMessages,
+        billableSessions,
+        monthlyActiveUsers: 0, // Placeholder for MAU calculation
+        sessionCost,
+        mauCost,
+        totalCost,
+        startDate: startOfMonth.format(),
+        endDate: now.format()
+      });
+    } else {
+      res.json({
+        totalMessages: 0,
+        billableSessions: 0,
+        monthlyActiveUsers: 0,
+        sessionCost: 0,
+        mauCost: 0,
+        totalCost: 0,
+        startDate: startOfMonth.format(),
+        endDate: now.format()
+      });
     }
   } catch (error) {
-    console.error("Error in /stats route:", error); //Added for better error handling
-    res.status(500).json({ error: 'An unexpected error occurred' });
+    console.error("Error in /stats route:", error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
 
