@@ -27,9 +27,15 @@ router.get('/exchange-rate', checkAuth, async (req, res) => {
   try {
     const axios = require('axios');
     const response = await axios.get('https://open.er-api.com/v6/latest/USD');
+    if (!response.data?.rates?.ZAR) {
+      throw new Error('Invalid exchange rate response');
+    }
+    console.log('Exchange rate fetched:', response.data.rates.ZAR);
     res.json({ rate: response.data.rates.ZAR });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch exchange rate' });
+    console.error('Exchange rate error:', error);
+    // Fallback to a default rate if API fails
+    res.json({ rate: 19.08 });
   }
 });
 
@@ -38,11 +44,18 @@ router.get('/stats', checkAuth, async (req, res) => {
     const now = moment();
     const startOfMonth = now.clone().startOf('month');
 
-    // First check if table exists, if not return empty stats
-    const { error: tableCheckError } = await supabase.from('billing_records').select('count').limit(1);
-    
-    if (tableCheckError?.message?.includes('does not exist')) {
-      return res.json({
+    // Direct query to billing_records with error logging
+    const { data: billingRecords, error: queryError } = await supabase
+      .from('billing_records')
+      .select('*')
+      .gte('message_timestamp', startOfMonth.toISOString());
+
+    if (queryError) {
+      console.error('Supabase query error:', queryError);
+      throw queryError;
+    }
+
+    console.log('Billing records fetched:', billingRecords?.length || 0);
         totalMessages: 0,
         billableSessions: 0,
         monthlyActiveUsers: 0,
