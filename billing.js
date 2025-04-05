@@ -115,10 +115,8 @@ router.get('/stats', checkAuth, async (req, res) => {
         sessionCost += parseFloat(msg.costs.utility || 0) + parseFloat(msg.costs.carrier || 0);
       });
 
-      // Add MAU cost for each unique user that was charged
-      if (messages.some(msg => msg.is_mau_charged)) {
-        mauCost += 0.06; // Fixed MAU cost per user
-      }
+      // Add MAU cost for each unique user regardless of is_mau_charged flag
+      mauCost += 0.06; // Fixed MAU cost per user
     }
 
     // Count unique mobile numbers for MAU
