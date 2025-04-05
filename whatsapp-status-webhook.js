@@ -16,6 +16,19 @@ const insertStatusToDb = async (statusDetails) => {
 
   try {
     const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
+    const currentTimestamp = new Date();
+
+    const { data, error } = await supabase
+      .from('billing_records')
+      .insert([{
+        mobile_number: recipientId,
+        whatsapp_message_id: messageId,
+        message_timestamp: currentTimestamp,
+        session_start_time: currentTimestamp,
+        message_month: supabase.sql`date_trunc('month', ${currentTimestamp}::date)`
+      }]);
+
+    if (error) throw error;
 
 
 // Function to handle location messages

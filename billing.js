@@ -43,9 +43,10 @@ router.get('/stats', checkAuth, async (req, res) => {
     const now = moment();
     const startOfMonth = now.clone().startOf('month');
 
+    // Include message_month in the query
     const { data: billingRecords, error: queryError } = await supabase
       .from('billing_records')
-      .select('*')
+      .select('mobile_number, whatsapp_message_id, message_timestamp, session_start_time, message_month')
       .gte('message_timestamp', startOfMonth.toISOString());
 
     if (queryError) {
