@@ -46,7 +46,18 @@ router.get('/stats', checkAuth, async (req, res) => {
     // Include message_month in the query
     const { data: billingRecords, error: queryError } = await supabase
       .from('billing_records')
-      .select('mobile_number, whatsapp_message_id, message_timestamp, session_start_time, message_month')
+      .select(`
+        mobile_number,
+        whatsapp_message_id,
+        message_timestamp,
+        session_start_time,
+        message_month,
+        cost_utility,
+        cost_carrier,
+        cost_mau,
+        total_cost,
+        is_mau_charged
+      `)
       .gte('message_timestamp', startOfMonth.toISOString());
 
     if (queryError) {
@@ -100,14 +111,14 @@ router.get('/stats', checkAuth, async (req, res) => {
       const userSessions = new Set(messages.map(m => m.sessionStart.format()));
       billableSessions += userSessions.size;
 
-      if (messages.some(m => m.costs.mau > 0)) {
+      if (messages.some(m => m.is_mau_charged)) {
         monthlyActiveUsers++;
       }
 
       messages.forEach(msg => {
-        sessionCost += msg.costs.utility + msg.costs.carrier;
-        mauCost += msg.costs.mau;
-        totalCost += msg.costs.total;
+        sessionCost += parseFloat(msg.cost_utility || 0) + parseFloat(msg.cost_carrier || 0);
+        mauCost += parseFloat(msg.cost_mau || 0);
+        totalCost += parseFloat(msg.total_cost || 0);
       });
     }
 
