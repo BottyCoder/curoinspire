@@ -87,9 +87,9 @@ router.get('/stats', checkAuth, async (req, res) => {
           endDate: now.format()
         });
       }
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch stats' });
-  }
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch stats' });
+    }
 });
 
 module.exports = router;
