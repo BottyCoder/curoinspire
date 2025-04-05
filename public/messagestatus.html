@@ -323,7 +323,7 @@
       return `
         <div class="status-card">
           <div class="status-header">
-            <div class="message-id">ID: ${msg.original_wamid || msg.wa_id || 'N/A'}</div>
+            <div class="message-id">ID: ${msg.original_wamid || 'N/A'}</div>
           </div>
           <div class="recipient">Recipient: ${msg.mobile_number}</div>
           <div class="timestamp">Timestamp: ${time}</div>
