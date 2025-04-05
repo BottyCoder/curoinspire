@@ -215,10 +215,10 @@ router.post('/', async (req, res) => {
           const { value } = change;
           if (value && value.statuses && Array.isArray(value.statuses)) {
             value.statuses.forEach((statusItem) => {
-              const { id: messageId, status, timestamp, recipient_id, errors } = statusItem;
+              const { id: wamid, status, timestamp, recipient_id, errors } = statusItem;
 
               // Log the status details
-              console.log(`Message ID: ${messageId}`);
+              console.log(`WAMID: ${wamid}`);
               console.log(`Status: ${status}`);
               console.log(`Timestamp: ${timestamp}`);
               console.log(`Recipient ID: ${recipient_id}`);
@@ -230,20 +230,9 @@ router.post('/', async (req, res) => {
                 });
               }
 
-              // Determine the client GUID (if available)
-              let clientGuid = "Not Applicable"; // Default if no client GUID is available
-
-              // Assuming that you retrieve the client_guid based on the recipient_id (adjust logic as needed)
-              // You may use your own logic here to get client_guid based on recipient_id or other criteria
-              if (recipient_id) {
-                // For example: Query the database or some source to find client_guid for recipient_id
-                // If no client_guid found, it will remain as "Not Applicable"
-                // This is just an example, you should adjust this as needed
-              }
-
-              // Insert status into the database
+              // Insert status into the database with the original wamid
               insertStatusToDb({
-                messageId: id, // Using the original message ID from WhatsApp
+                messageId: wamid, // Using the wamid directly from WhatsApp
                 recipientId: recipient_id,
                 status,
                 timestamp,
