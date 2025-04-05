@@ -4,10 +4,10 @@ const moment = require('moment-timezone');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 
-// Initialize Supabase with public role 
+// Initialize Supabase with service role key
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY, // Use service role key to bypass RLS
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
   {
     auth: { persistSession: false }
   }
@@ -34,7 +34,6 @@ router.get('/exchange-rate', checkAuth, async (req, res) => {
     res.json({ rate: response.data.rates.ZAR });
   } catch (error) {
     console.error('Exchange rate error:', error);
-    // Fallback to a default rate if API fails
     res.json({ rate: 19.08 });
   }
 });
@@ -44,7 +43,6 @@ router.get('/stats', checkAuth, async (req, res) => {
     const now = moment();
     const startOfMonth = now.clone().startOf('month');
 
-    // Direct query to billing_records with error logging
     const { data: billingRecords, error: queryError } = await supabase
       .from('billing_records')
       .select('*')
@@ -56,6 +54,9 @@ router.get('/stats', checkAuth, async (req, res) => {
     }
 
     console.log('Billing records fetched:', billingRecords?.length || 0);
+
+    if (!billingRecords || billingRecords.length === 0) {
+      return res.json({
         totalMessages: 0,
         billableSessions: 0,
         monthlyActiveUsers: 0,
@@ -65,87 +66,62 @@ router.get('/stats', checkAuth, async (req, res) => {
         startDate: startOfMonth.format(),
         endDate: now.format()
       });
-    }
-
-    const { data: billingRecords, error } = await supabase
-      .from('billing_records')
-      .select('*')
-      .gte('message_timestamp', startOfMonth.toISOString());
-
-    if (error) {
-      console.error("Supabase query error:", error);
-      throw error;
     }
 
     // Initialize metrics
-    const totalMessages = billingRecords?.length || 0;
-    let totalCost = 0;
-    let sessionCost = 0;
-    let mauCost = 0;
+    const totalMessages = billingRecords.length;
     let billableSessions = 0;
     let monthlyActiveUsers = 0;
+    let sessionCost = 0;
+    let mauCost = 0;
+    let totalCost = 0;
 
-    if (billingRecords && billingRecords.length > 0) {
-      // Group messages by user and session
-      const sessions = billingRecords.reduce((acc, record) => {
-        if (!acc[record.mobile_number]) {
-          acc[record.mobile_number] = [];
+    // Group messages by user and session
+    const sessions = billingRecords.reduce((acc, record) => {
+      if (!acc[record.mobile_number]) {
+        acc[record.mobile_number] = [];
+      }
+      acc[record.mobile_number].push({
+        timestamp: moment(record.message_timestamp),
+        sessionStart: moment(record.session_start_time),
+        costs: {
+          utility: parseFloat(record.cost_utility) || 0,
+          carrier: parseFloat(record.cost_carrier) || 0,
+          mau: parseFloat(record.cost_mau) || 0,
+          total: parseFloat(record.total_cost) || 0
         }
-        acc[record.mobile_number].push({
-          timestamp: moment(record.message_timestamp),
-          sessionStart: moment(record.session_start_time),
-          costs: {
-            utility: parseFloat(record.cost_utility) || 0,
-            carrier: parseFloat(record.cost_carrier) || 0,
-            mau: parseFloat(record.cost_mau) || 0,
-            total: parseFloat(record.total_cost) || 0
-          }
-        });
-        return acc;
-      }, {});
+      });
+      return acc;
+    }, {});
 
-      // Calculate metrics
-      for (const [user, messages] of Object.entries(sessions)) {
-        const userSessions = new Set(messages.map(m => m.sessionStart.format()));
-        billableSessions += userSessions.size;
-        
-        // MAU is counted once per user if they have any messages
-        if (messages.some(m => m.costs.mau > 0)) {
-          monthlyActiveUsers++;
-        }
+    // Calculate metrics
+    for (const [user, messages] of Object.entries(sessions)) {
+      const userSessions = new Set(messages.map(m => m.sessionStart.format()));
+      billableSessions += userSessions.size;
 
-        // Sum up costs
-        messages.forEach(msg => {
-          sessionCost += msg.costs.utility + msg.costs.carrier;
-          mauCost += msg.costs.mau;
-          totalCost += msg.costs.total;
-        });
+      if (messages.some(m => m.costs.mau > 0)) {
+        monthlyActiveUsers++;
       }
 
-      res.json({
-        totalMessages,
-        billableSessions,
-        monthlyActiveUsers: 0, // Placeholder for MAU calculation
-        sessionCost,
-        mauCost,
-        totalCost,
-        startDate: startOfMonth.format(),
-        endDate: now.format()
-      });
-    } else {
-      res.json({
-        totalMessages: 0,
-        billableSessions: 0,
-        monthlyActiveUsers: 0,
-        sessionCost: 0,
-        mauCost: 0,
-        totalCost: 0,
-        startDate: startOfMonth.format(),
-        endDate: now.format()
+      messages.forEach(msg => {
+        sessionCost += msg.costs.utility + msg.costs.carrier;
+        mauCost += msg.costs.mau;
+        totalCost += msg.costs.total;
       });
     }
+
+    res.json({
+      totalMessages,
+      billableSessions,
+      monthlyActiveUsers,
+      sessionCost,
+      mauCost,
+      totalCost,
+      startDate: startOfMonth.format(),
+      endDate: now.format()
+    });
   } catch (error) {
-    console.error("Error in /stats route:", error);
+    console.error('Error in /stats route:', error);
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
