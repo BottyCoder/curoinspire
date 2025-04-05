@@ -37,12 +37,25 @@
             </div>
 
             <!-- Session Cost -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
+            <div class="bg-white p-6 rounded-lg shadow-sm relative">
                 <h2 class="text-sm text-gray-600 mb-2">Session Cost</h2>
-                <p class="text-2xl font-semibold">
+                <p class="text-2xl font-semibold cursor-pointer" onclick="toggleSessionDetails()">
                     $<span id="session-cost-usd">0.00</span>
                     <span class="text-gray-500">(R<span id="session-cost-zar">0.00</span>)</span>
+                    <span class="text-xs ml-2">▼</span>
                 </p>
+                <div id="session-details" class="hidden absolute top-full left-0 w-full bg-white border rounded-lg shadow-lg mt-2 p-4 z-10">
+                    <div class="mb-3">
+                        <h3 class="text-sm font-semibold text-gray-600">Carrier Fees</h3>
+                        <p class="text-lg">Count: <span id="carrier-count">0</span></p>
+                        <p class="text-lg">Total: $<span id="carrier-total">0.00</span></p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-600">Utility Fees</h3>
+                        <p class="text-lg">Count: <span id="utility-count">0</span></p>
+                        <p class="text-lg">Total: $<span id="utility-total">0.00</span></p>
+                    </div>
+                </div>
             </div>
             
             <!-- MAU Cost -->
@@ -66,6 +79,20 @@
     </div>
 
     <script>
+        function toggleSessionDetails() {
+            const details = document.getElementById('session-details');
+            details.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const sessionCost = document.querySelector('.text-2xl.font-semibold');
+            const details = document.getElementById('session-details');
+            if (!sessionCost.contains(e.target) && !details.contains(e.target)) {
+                details.classList.add('hidden');
+            }
+        });
+
         async function fetchData() {
             try {
                 const [statsRes, rateRes] = await Promise.all([
@@ -91,6 +118,12 @@
                 // Update costs
                 document.getElementById('session-cost-usd').textContent = stats.sessionCost?.toFixed(2) || '0.00';
                 document.getElementById('session-cost-zar').textContent = ((stats.sessionCost || 0) * rate).toFixed(2);
+                
+                // Update carrier and utility details
+                document.getElementById('carrier-count').textContent = stats.carrierCount || 0;
+                document.getElementById('carrier-total').textContent = stats.carrierTotal?.toFixed(2) || '0.00';
+                document.getElementById('utility-count').textContent = stats.utilityCount || 0;
+                document.getElementById('utility-total').textContent = stats.utilityTotal?.toFixed(2) || '0.00';
                 
                 document.getElementById('mau-cost-usd').textContent = stats.mauCost?.toFixed(2) || '0.00';
                 document.getElementById('mau-cost-zar').textContent = ((stats.mauCost || 0) * rate).toFixed(2);

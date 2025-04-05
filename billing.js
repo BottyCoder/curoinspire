@@ -105,10 +105,28 @@ router.get('/stats', checkAuth, async (req, res) => {
       return acc;
     }, {});
 
+    // Initialize carrier and utility metrics
+    let carrierCount = 0;
+    let carrierTotal = 0;
+    let utilityCount = 0;
+    let utilityTotal = 0;
+
     // Calculate metrics
     for (const [user, messages] of Object.entries(sessions)) {
       // Sort messages by timestamp
       messages.sort((a, b) => a.timestamp - b.timestamp);
+      
+      // Count carrier and utility fees
+      messages.forEach(msg => {
+        if (msg.costs.carrier > 0) {
+          carrierCount++;
+          carrierTotal += msg.costs.carrier;
+        }
+        if (msg.costs.utility > 0) {
+          utilityCount++;
+          utilityTotal += msg.costs.utility;
+        }
+      });
       
       // Group into sessions with 23h50m window
       const sessionGroups = [];
@@ -151,6 +169,10 @@ router.get('/stats', checkAuth, async (req, res) => {
       sessionCost,
       mauCost,
       totalCost,
+      carrierCount,
+      carrierTotal,
+      utilityCount,
+      utilityTotal,
       startDate: startOfMonth.format(),
       endDate: now.format()
     });
