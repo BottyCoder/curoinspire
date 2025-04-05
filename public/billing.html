@@ -8,71 +8,71 @@
     <link rel="stylesheet" href="/styles/main.css">
 </head>
 <body>
-    <div class="container">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-bold">Billing Dashboard</h1>
-            <div class="text-sm text-gray-600">
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>Billing Dashboard</h1>
+            <div class="exchange-rate">
                 Exchange Rate: <span id="exchange-rate">1 USD = -- ZAR</span><br>
-                <span class="text-xs">Excludes bank charges</span>
+                <span class="small-text">Excludes bank charges</span>
             </div>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="stats-grid">
             <!-- Total Messages -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-sm text-gray-600 mb-2">Total Messages</h2>
-                <p id="total-messages" class="text-3xl font-semibold">0</p>
+            <div class="stat-card">
+                <h2>Total Messages</h2>
+                <p id="total-messages">0</p>
             </div>
             
             <!-- Billable Sessions -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-sm text-gray-600 mb-2">Billable Sessions</h2>
-                <p id="billable-sessions" class="text-3xl font-semibold">0</p>
+            <div class="stat-card">
+                <h2>Billable Sessions</h2>
+                <p id="billable-sessions">0</p>
             </div>
             
             <!-- Monthly Active Users -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-sm text-gray-600 mb-2">Monthly Active Users</h2>
-                <p id="monthly-users" class="text-3xl font-semibold">0</p>
+            <div class="stat-card">
+                <h2>Monthly Active Users</h2>
+                <p id="monthly-users">0</p>
             </div>
 
             <!-- Session Cost -->
-            <div class="bg-white p-6 rounded-lg shadow-sm relative">
-                <h2 class="text-sm text-gray-600 mb-2">Session Cost</h2>
-                <p class="text-2xl font-semibold cursor-pointer" onclick="toggleSessionDetails()">
+            <div class="stat-card">
+                <h2>Session Cost</h2>
+                <p class="cost-display" onclick="toggleSessionDetails()">
                     $<span id="session-cost-usd">0.00</span>
-                    <span class="text-gray-500">(R<span id="session-cost-zar">0.00</span>)</span>
-                    <span class="text-xs ml-2">▼</span>
+                    <span class="currency-conversion">(R<span id="session-cost-zar">0.00</span>)</span>
+                    <span class="dropdown-arrow">▼</span>
                 </p>
-                <div id="session-details" class="hidden absolute top-full left-0 w-full bg-white border rounded-lg shadow-lg mt-2 p-4 z-10">
-                    <div class="mb-3">
-                        <h3 class="text-sm font-semibold text-gray-600">Carrier Fees</h3>
-                        <p class="text-lg">Count: <span id="carrier-count">0</span></p>
-                        <p class="text-lg">Total: $<span id="carrier-total">0.00</span></p>
+                <div id="session-details" class="dropdown-content">
+                    <div class="fee-section">
+                        <h3>Carrier Fees</h3>
+                        <p>Count: <span id="carrier-count">0</span></p>
+                        <p>Total: $<span id="carrier-total">0.00</span></p>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-600">Utility Fees</h3>
-                        <p class="text-lg">Count: <span id="utility-count">0</span></p>
-                        <p class="text-lg">Total: $<span id="utility-total">0.00</span></p>
+                    <div class="fee-section">
+                        <h3>Utility Fees</h3>
+                        <p>Count: <span id="utility-count">0</span></p>
+                        <p>Total: $<span id="utility-total">0.00</span></p>
                     </div>
                 </div>
             </div>
             
             <!-- MAU Cost -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-sm text-gray-600 mb-2">MAU Cost</h2>
-                <p class="text-2xl font-semibold">
+            <div class="stat-card">
+                <h2>MAU Cost</h2>
+                <p class="cost-display">
                     $<span id="mau-cost-usd">0.00</span>
-                    <span class="text-gray-500">(R<span id="mau-cost-zar">0.00</span>)</span>
+                    <span class="currency-conversion">(R<span id="mau-cost-zar">0.00</span>)</span>
                 </p>
             </div>
             
             <!-- Total Cost -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-sm text-gray-600 mb-2">Total Cost</h2>
-                <p class="text-2xl font-semibold">
+            <div class="stat-card">
+                <h2>Total Cost</h2>
+                <p class="cost-display">
                     $<span id="total-cost-usd">0.00</span>
-                    <span class="text-gray-500">(R<span id="total-cost-zar">0.00</span>)</span>
+                    <span class="currency-conversion">(R<span id="total-cost-zar">0.00</span>)</span>
                 </p>
             </div>
         </div>
@@ -81,7 +81,7 @@
     <script>
         function toggleSessionDetails() {
             const details = document.getElementById('session-details');
-            details.classList.toggle('hidden');
+            details.classList.toggle('show');
         }
 
         // Close dropdown when clicking outside
