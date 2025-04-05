@@ -18,7 +18,7 @@ const insertStatusToDb = async (statusDetails) => {
     const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
     const messageTime = new Date();
 
-    const { data, error } = await supabase
+    const { error: billingError } = await supabase
       .from('billing_records')
       .insert([{
         mobile_number: recipientId,
@@ -34,8 +34,7 @@ const insertStatusToDb = async (statusDetails) => {
         created_at: messageTime
       }]);
 
-    if (error) throw error;
-
+    if (billingError) throw billingError;
 
 // Function to handle location messages
 const handleLocationMessage = async (locationData) => {
