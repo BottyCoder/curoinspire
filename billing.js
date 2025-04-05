@@ -161,10 +161,8 @@ router.get('/stats', checkAuth, async (req, res) => {
 
       billableSessions += sessionGroups.length;
       
-      // Sum session costs for all messages
-      messages.forEach(msg => {
-        sessionCost += parseFloat(msg.costs.utility || 0) + parseFloat(msg.costs.carrier || 0);
-      });
+      // Calculate session cost as sum of carrier and utility fees per session
+      sessionCost = carrierTotal + utilityTotal;
 
       // Add MAU cost for each unique user regardless of is_mau_charged flag
       mauCost += 0.06; // Fixed MAU cost per user
