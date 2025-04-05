@@ -113,7 +113,7 @@ const handleLocationMessage = async (locationData) => {
 
     // Create new status record with available data
     const newStatusRecord = {
-      original_wamid: `wamid.HBgL${messageId}`, // Ensure proper wamid format
+      original_wamid: messageId, // Use WAMID directly from WhatsApp
       mobile_number: recipientId,
       channel: "whatsapp",
       status: status,
