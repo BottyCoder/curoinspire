@@ -114,6 +114,8 @@ router.get('/stats', checkAuth, async (req, res) => {
 
     // Calculate metrics
     for (const [user, messages] of Object.entries(sessions)) {
+      if (!messages || messages.length === 0) continue;
+      
       // Sort messages by timestamp
       messages.sort((a, b) => a.timestamp - b.timestamp);
       
@@ -141,9 +143,8 @@ router.get('/stats', checkAuth, async (req, res) => {
       carrierTotal += userSessions.length * 0.01; // $0.01 per session
       utilityTotal += userSessions.length * 0.0076; // $0.0076 per session
       
-      // Group into sessions with 23h50m window
-      const sessionGroups = [];
-      let currentSession = [messages[0]];
+      // Store session groups for any additional processing
+      const sessionGroups = [...userSessions];
       
       for (let i = 1; i < messages.length; i++) {
         const timeDiff = messages[i].timestamp.diff(currentSession[0].timestamp, 'minutes');
