@@ -7,7 +7,7 @@ const path = require('path');
 // Initialize Supabase with public role 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY, // Use anon/public key since RLS policies are set for public role
+  process.env.SUPABASE_SERVICE_ROLE_KEY, // Use service role key to bypass RLS
   {
     auth: { persistSession: false }
   }
