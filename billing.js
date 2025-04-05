@@ -105,28 +105,41 @@ router.get('/stats', checkAuth, async (req, res) => {
       return acc;
     }, {});
 
-    // Initialize carrier and utility metrics
+    // Initialize metrics
     let carrierCount = 0;
     let carrierTotal = 0;
     let utilityCount = 0;
     let utilityTotal = 0;
+    let sessionCount = 0;
 
     // Calculate metrics
     for (const [user, messages] of Object.entries(sessions)) {
       // Sort messages by timestamp
       messages.sort((a, b) => a.timestamp - b.timestamp);
       
-      // Count carrier and utility fees
-      messages.forEach(msg => {
-        if (msg.costs.carrier > 0) {
-          carrierCount++;
-          carrierTotal += msg.costs.carrier;
+      // Group into sessions with 23h50m window
+      const userSessions = [];
+      let currentSession = [messages[0]];
+      
+      for (let i = 1; i < messages.length; i++) {
+        const timeDiff = messages[i].timestamp.diff(currentSession[0].timestamp, 'minutes');
+        if (timeDiff <= 1430) { // 23 hours and 50 minutes
+          currentSession.push(messages[i]);
+        } else {
+          userSessions.push(currentSession);
+          currentSession = [messages[i]];
         }
-        if (msg.costs.utility > 0) {
-          utilityCount++;
-          utilityTotal += msg.costs.utility;
-        }
-      });
+      }
+      if (currentSession.length > 0) {
+        userSessions.push(currentSession);
+      }
+
+      // Count one carrier and utility fee per session
+      sessionCount += userSessions.length;
+      carrierCount += userSessions.length;
+      utilityCount += userSessions.length;
+      carrierTotal += userSessions.length * 0.01; // $0.01 per session
+      utilityTotal += userSessions.length * 0.0076; // $0.0076 per session
       
       // Group into sessions with 23h50m window
       const sessionGroups = [];
