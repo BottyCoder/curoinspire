@@ -110,9 +110,8 @@ router.get('/stats', checkAuth, async (req, res) => {
       const userSessions = new Set(messages.map(m => m.sessionStart.format()));
       billableSessions += userSessions.size;
 
-      if (messages.some(m => m.is_mau_charged)) {
-        monthlyActiveUsers++;
-      }
+      // Count unique mobile numbers for MAU
+      monthlyActiveUsers = Object.keys(sessions).length;
 
       messages.forEach(msg => {
         sessionCost += parseFloat(msg.cost_utility || 0) + parseFloat(msg.cost_carrier || 0);
