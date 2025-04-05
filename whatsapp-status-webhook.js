@@ -16,16 +16,22 @@ const insertStatusToDb = async (statusDetails) => {
 
   try {
     const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
-    const currentTimestamp = new Date();
+    const messageTime = new Date();
 
     const { data, error } = await supabase
       .from('billing_records')
       .insert([{
         mobile_number: recipientId,
         whatsapp_message_id: messageId,
-        message_timestamp: currentTimestamp,
-        session_start_time: currentTimestamp,
-        message_month: supabase.sql`date_trunc('month', ${currentTimestamp}::date)`
+        message_timestamp: messageTime,
+        session_start_time: messageTime,
+        message_month: messageTime,
+        cost_utility: 0.0076,
+        cost_carrier: 0.01,
+        cost_mau: 0.06,
+        total_cost: 0.0776,
+        is_mau_charged: false,
+        created_at: messageTime
       }]);
 
     if (error) throw error;
