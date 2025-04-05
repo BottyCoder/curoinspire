@@ -314,12 +314,12 @@ app.post("/receive-reply", async (req, res) => {
     } catch (error) {
         console.error("❌ Error in /receive-reply logic:", {
             error: error.message,
-            response: error.response?.data,
+            response: error.response && error.response.data,
             tracking_code,
             stack: error.stack
         });
         
-        if (error.response?.data) {
+        if (error.response && error.response.data) {
             res.status(500).json({ 
                 error: "Failed to store reply or send it to Inspire",
                 details: error.response.data 
