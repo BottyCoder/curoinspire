@@ -46,19 +46,14 @@ router.get('/stats', checkAuth, async (req, res) => {
     // Include message_month in the query
     const { data: billingRecords, error: queryError } = await supabase
       .from('billing_records')
-      .select(`
-        mobile_number,
-        whatsapp_message_id,
-        message_timestamp,
-        session_start_time,
-        message_month,
-        cost_utility,
-        cost_carrier,
-        cost_mau,
-        total_cost,
-        is_mau_charged
-      `)
+      .select('*')
       .gte('message_timestamp', startOfMonth.toISOString());
+
+    console.log('Full billing records:', JSON.stringify(billingRecords, null, 2));
+    console.log('Query conditions:', {
+      startOfMonth: startOfMonth.toISOString(),
+      currentTime: now.toISOString()
+    });
 
     if (queryError) {
       console.error('Supabase query error:', queryError);
@@ -89,11 +84,13 @@ router.get('/stats', checkAuth, async (req, res) => {
     let totalCost = 0;
 
     // Group messages by user and session
+    console.log('Processing records for unique users...');
     const sessions = billingRecords.reduce((acc, record) => {
-      if (!acc[record.mobile_number]) {
-        acc[record.mobile_number] = [];
+      const mobileNumber = record.mobile_number || record.recipient_number;
+      if (!acc[mobileNumber]) {
+        acc[mobileNumber] = [];
       }
-      acc[record.mobile_number].push({
+      acc[mobileNumber].push({
         timestamp: moment(record.message_timestamp),
         sessionStart: moment(record.session_start_time),
         costs: {
@@ -101,8 +98,10 @@ router.get('/stats', checkAuth, async (req, res) => {
           carrier: parseFloat(record.cost_carrier) || 0,
           mau: parseFloat(record.cost_mau) || 0,
           total: parseFloat(record.total_cost) || 0
-        }
+        },
+        is_mau_charged: record.is_mau_charged
       });
+      console.log(`Added record for ${mobileNumber}, session start: ${record.session_start_time}`);
       return acc;
     }, {});
 
