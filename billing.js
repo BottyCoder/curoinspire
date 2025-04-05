@@ -29,36 +29,76 @@ router.get('/stats', checkAuth, async (req, res) => {
     const now = moment();
     const startOfMonth = now.clone().startOf('month');
 
+    // First check if table exists, if not return empty stats
+    const { error: tableCheckError } = await supabase.from('billing_records').select('count').limit(1);
+    
+    if (tableCheckError?.message?.includes('does not exist')) {
+      return res.json({
+        totalMessages: 0,
+        billableSessions: 0,
+        monthlyActiveUsers: 0,
+        sessionCost: 0,
+        mauCost: 0,
+        totalCost: 0,
+        startDate: startOfMonth.format(),
+        endDate: now.format()
+      });
+    }
+
     const { data: billingRecords, error } = await supabase
       .from('billing_records')
       .select('*')
-      .gte('message_timestamp', startOfMonth.format('YYYY-MM-DD'));
+      .gte('message_timestamp', startOfMonth.toISOString());
 
     if (error) {
       console.error("Supabase query error:", error);
       throw error;
     }
 
-    // Initialize default values
+    // Initialize metrics
     const totalMessages = billingRecords?.length || 0;
     let totalCost = 0;
     let sessionCost = 0;
     let mauCost = 0;
+    let billableSessions = 0;
+    let monthlyActiveUsers = 0;
 
     if (billingRecords && billingRecords.length > 0) {
-      // Sum up costs
-      totalCost = billingRecords.reduce((sum, record) => (
-        sum + (parseFloat(record.total_cost) || 0)
-      ), 0);
+      // Group messages by user and session
+      const sessions = billingRecords.reduce((acc, record) => {
+        if (!acc[record.mobile_number]) {
+          acc[record.mobile_number] = [];
+        }
+        acc[record.mobile_number].push({
+          timestamp: moment(record.message_timestamp),
+          sessionStart: moment(record.session_start_time),
+          costs: {
+            utility: parseFloat(record.cost_utility) || 0,
+            carrier: parseFloat(record.cost_carrier) || 0,
+            mau: parseFloat(record.cost_mau) || 0,
+            total: parseFloat(record.total_cost) || 0
+          }
+        });
+        return acc;
+      }, {});
 
-      // Calculate session costs (utility)
-      sessionCost = billingRecords.reduce((sum, record) => (
-        sum + (parseFloat(record.cost_utility) || 0)
-      ), 0);
+      // Calculate metrics
+      for (const [user, messages] of Object.entries(sessions)) {
+        const userSessions = new Set(messages.map(m => m.sessionStart.format()));
+        billableSessions += userSessions.size;
+        
+        // MAU is counted once per user if they have any messages
+        if (messages.some(m => m.costs.mau > 0)) {
+          monthlyActiveUsers++;
+        }
 
-      // Calculate billable sessions
-      const hasUtility = billingRecords.some(record => parseFloat(record.cost_utility) > 0);
-      const billableSessions = hasUtility ? Math.ceil(totalMessages / 24) : 0;
+        // Sum up costs
+        messages.forEach(msg => {
+          sessionCost += msg.costs.utility + msg.costs.carrier;
+          mauCost += msg.costs.mau;
+          totalCost += msg.costs.total;
+        });
+      }
 
       res.json({
         totalMessages,
