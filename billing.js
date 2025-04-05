@@ -29,10 +29,15 @@ router.get('/stats', checkAuth, async (req, res) => {
     const now = moment();
     const startOfMonth = now.clone().startOf('month');
 
-    const { data: billingRecords } = await supabase
+    const { data: billingRecords, error } = await supabase
       .from('billing_records')
       .select('*')
-      .gte('message_timestamp', startOfMonth.format('YYYY-MM-DD HH:mm:ss.SSS'));
+      .gte('message_timestamp', startOfMonth.format('YYYY-MM-DD'));
+
+    if (error) {
+      console.error("Supabase query error:", error);
+      throw error;
+    }
 
     // Initialize default values
     const totalMessages = billingRecords?.length || 0;
