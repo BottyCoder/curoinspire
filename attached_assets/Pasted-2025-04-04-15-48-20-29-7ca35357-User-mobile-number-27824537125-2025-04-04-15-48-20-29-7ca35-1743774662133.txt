@@ -1,0 +1,160 @@
+2025-04-04 15:48:20.29
+7ca35357
+User
+mobile_number: '27824537125',
+2025-04-04 15:48:20.29
+7ca35357
+User
+customer_name: 'Test Customer',
+2025-04-04 15:48:20.29
+7ca35357
+User
+message: 'Test message',
+2025-04-04 15:48:20.29
+7ca35357
+User
+customer_response: null,
+2025-04-04 15:48:20.29
+7ca35357
+User
+channel: 'whatsapp',
+2025-04-04 15:48:20.29
+7ca35357
+User
+status: 'sent',
+2025-04-04 15:48:20.29
+7ca35357
+User
+timestamp: '2025-04-04T13:48:18Z'
+2025-04-04 15:48:20.29
+7ca35357
+User
+}
+2025-04-04 15:48:20.66
+7ca35357
+User
+✅ Message stored in database. Tracking code: a271198b-d8bc-4f71-86ca-2d322ec8ed88
+2025-04-04 15:48:20.66
+7ca35357
+User
+✅ Full inserted data: [
+2025-04-04 15:48:20.66
+7ca35357
+User
+{
+2025-04-04 15:48:20.66
+7ca35357
+User
+id: '7bc013bd-9e0a-4e1d-b7be-6c42b87ef450',
+2025-04-04 15:48:20.66
+7ca35357
+User
+tracking_code: 'a271198b-d8bc-4f71-86ca-2d322ec8ed88',
+2025-04-04 15:48:20.66
+7ca35357
+User
+client_guid: '8c4e796e-e92b-4c45-9870-4b6aabfa2859',
+2025-04-04 15:48:20.66
+7ca35357
+User
+mobile_number: '27824537125',
+2025-04-04 15:48:20.66
+7ca35357
+User
+wa_id: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+timestamp: '2025-04-04T15:48:18+02:00',
+2025-04-04 15:48:20.66
+7ca35357
+User
+message: 'Test message',
+2025-04-04 15:48:20.66
+7ca35357
+User
+channel: 'whatsapp',
+2025-04-04 15:48:20.66
+7ca35357
+User
+status: 'sent',
+2025-04-04 15:48:20.66
+7ca35357
+User
+cost: 0,
+2025-04-04 15:48:20.66
+7ca35357
+User
+session_id: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+temp_field: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+reply_message: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+delivered_at: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+last_error: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+customer_name: 'Test Customer',
+2025-04-04 15:48:20.66
+7ca35357
+User
+original_wamid: 'wamid.HBgLMjc4MjQ1MzcxMjUVAgARGBIyNTgwQkRDM0IwRkJBOEU3N0UA',
+2025-04-04 15:48:20.66
+7ca35357
+User
+customer_response: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+status_timestamp: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+error_code: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+error_message: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+message_type: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+latitude: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+longitude: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+location_name: null,
+2025-04-04 15:48:20.66
+7ca35357
+User
+location_address: null
+2025-04-04 15:48:20.66
+7ca35357
+User
+}
+2025-04-04 15:48:20.66
+7ca35357
+User
+]
+
+Wrap
+
+Colors

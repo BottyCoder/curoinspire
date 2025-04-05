@@ -1,0 +1,148 @@
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-cloud-trace-context": "5aa78f843b4c963f6c55d0ebd085c326/13019453225874565395",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-forwarded-for": "3.7.74.54, 34.111.179.208, 35.191.87.189,34.72.101.37",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-forwarded-host": "inspire.botforce.co.za",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-forwarded-proto": "https",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-replit-user-bio": "",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-replit-user-id": "",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-replit-user-name": "",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-replit-user-profile-image": "",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-replit-user-roles": "",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-replit-user-teams": "",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"x-replit-user-url": ""
+2025-04-04 16:04:31.10
+f35fa335
+User
+}
+2025-04-04 16:04:31.10
+f35fa335
+User
+Body: {
+2025-04-04 16:04:31.10
+f35fa335
+User
+"object": "whatsapp_business_account",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"entry": [
+2025-04-04 16:04:31.10
+f35fa335
+User
+{
+2025-04-04 16:04:31.10
+f35fa335
+User
+"id": "534770752614324",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"changes": [
+2025-04-04 16:04:31.10
+f35fa335
+User
+{
+2025-04-04 16:04:31.10
+f35fa335
+User
+"value": {
+2025-04-04 16:04:31.10
+f35fa335
+User
+"messaging_product": "whatsapp",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"metadata": {
+2025-04-04 16:04:31.10
+f35fa335
+User
+"display_phone_number": "27824937050",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"phone_number_id": "600387479826193"
+2025-04-04 16:04:31.10
+f35fa335
+User
+},
+2025-04-04 16:04:31.10
+f35fa335
+User
+"statuses": [
+2025-04-04 16:04:31.10
+f35fa335
+User
+{
+2025-04-04 16:04:31.10
+f35fa335
+User
+"id": "wamid.HBgLMjc4MzU3ODIzMTUVAgARGBJEQjI3NTZEMTZCM0RFQzQwNkUA",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"status": "sent",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"timestamp": "1743775469",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"recipient_id": "27835782315",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"conversation": {
+2025-04-04 16:04:31.10
+f35fa335
+User
+"id": "24020a25598ef5c89b88ec72df6e0cbd",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"expiration_timestamp": "1743861840",
+2025-04-04 16:04:31.10
+f35fa335
+User
+"origin": {
+2025-04-04 16:04:31.10
+f35fa335
+User
+"type": "utility"
+2025-04-04 16:04:31.10
+f35fa335
+User
+}
