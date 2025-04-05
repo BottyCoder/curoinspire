@@ -46,21 +46,46 @@ router.get('/stats', checkAuth, async (req, res) => {
     // Calculate totals
     const totalMessages = billingRecords?.length || 0;
     let totalCost = 0;
-    let hasUtility = false;
+    let sessionCost = 0;
+    let mauCost = 0;
 
     if (billingRecords && billingRecords.length > 0) {
-      totalCost = billingRecords.reduce((sum, record) => sum + parseFloat(record.total_cost), 0);
-      // Check if any record has utility cost
-      hasUtility = billingRecords.some(record => parseFloat(record.cost_utility) > 0);
-    }
+      // Sum up costs
+      totalCost = billingRecords.reduce((sum, record) => (
+        sum + (parseFloat(record.total_cost) || 0)
+      ), 0);
+      
+      // Calculate session costs (utility)
+      sessionCost = billingRecords.reduce((sum, record) => (
+        sum + (parseFloat(record.cost_utility) || 0)
+      ), 0);
 
-    res.json({
-      totalMessages,
-      billableSessions: hasUtility ? Math.ceil(totalMessages / 24) : 0,
-      monthlyActiveUsers: 0, // This will need separate calculation if required
-      totalCost,
-      startDate: startOfMonth.format(),
-      endDate: now.format()
+      // Calculate billable sessions
+      const hasUtility = billingRecords.some(record => parseFloat(record.cost_utility) > 0);
+      const billableSessions = hasUtility ? Math.ceil(totalMessages / 24) : 0;
+
+      res.json({
+        totalMessages,
+        billableSessions,
+        monthlyActiveUsers: 0, // Placeholder for MAU calculation
+        sessionCost,
+        mauCost,
+        totalCost,
+        startDate: startOfMonth.format(),
+        endDate: now.format()
+      });
+    } else {
+      res.json({
+        totalMessages: 0,
+        billableSessions: 0,
+        monthlyActiveUsers: 0,
+        sessionCost: 0,
+        mauCost: 0,
+        totalCost: 0,
+        startDate: startOfMonth.format(),
+        endDate: now.format()
+      });
+    }
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch stats' });
