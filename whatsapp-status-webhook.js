@@ -138,21 +138,37 @@ router.post('/', async (req, res) => {
 
     const promises = [];
 
-    // Handle direct status updates
+    // Handle statuses array
     if (value.statuses && Array.isArray(value.statuses)) {
       console.log(`Processing ${value.statuses.length} status updates`);
 
       for (const status of value.statuses) {
+        console.log('Processing status:', status);
         promises.push(insertStatusToDb({
           messageId: status.id,
-          recipientId: status.recipient_id,
+          recipientId: status.recipient_id || value.metadata?.display_phone_number,
           status: status.status,
-          timestamp: status.timestamp || Math.floor(Date.now() / 1000)
+          timestamp: status.timestamp
         }));
       }
     }
+    // Handle direct status in value object
+    else if (value.status && value.id) {
+      console.log('Found direct status update:', {
+        id: value.id,
+        status: value.status,
+        recipient: value.recipient_id || value.metadata?.recipient_id
+      });
 
-    // Handle message status updates
+      promises.push(insertStatusToDb({
+        messageId: value.id,
+        recipientId: value.recipient_id || value.metadata?.recipient_id,
+        status: value.status,
+        timestamp: req.body?.entry?.[0]?.changes?.[0]?.timestamp
+      }));
+    }
+
+    // Handle message updates
     if (value.messages && Array.isArray(value.messages)) {
       console.log(`Processing ${value.messages.length} message updates`);
 
@@ -166,16 +182,6 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Handle single status update
-    if (value.status && value.id) {
-      console.log('Processing single status update');
-      promises.push(insertStatusToDb({
-        messageId: value.id,
-        recipientId: value.recipient_id || value.metadata?.recipient_id,
-        status: value.status,
-        timestamp: req.body?.entry?.[0]?.changes?.[0]?.timestamp || Math.floor(Date.now() / 1000)
-      }));
-    }
 
     if (promises.length === 0) {
       console.log('No status updates to process');
