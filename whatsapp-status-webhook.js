@@ -186,9 +186,12 @@ router.post('/', async (req, res) => {
   console.log("================================");
 
   // Check for status updates first
+  console.log('=== CHECKING FOR STATUS UPDATES ===');
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
+  
   if (req.body?.entry?.[0]?.changes?.[0]?.value?.statuses) {
     const statusUpdates = req.body.entry[0].changes[0].value.statuses;
-    console.log('Processing status updates:', JSON.stringify(statusUpdates, null, 2));
+    console.log('✅ Found status updates:', JSON.stringify(statusUpdates, null, 2));
     
     for (const status of statusUpdates) {
       await insertStatusToDb({
@@ -308,6 +311,8 @@ router.post('/', async (req, res) => {
     });
   } else {
     console.log("⚠️ Invalid data structure or unexpected webhook object");
+    console.log("Received object type:", object);
+    console.log("Entry structure:", JSON.stringify(entry, null, 2));
     return res.status(400).send('Invalid data structure');
   }
 
