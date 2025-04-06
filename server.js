@@ -371,6 +371,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'messagestatus.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
     console.log(`\n✅ Server running on port ${PORT}`);
 });
