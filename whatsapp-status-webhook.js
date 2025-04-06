@@ -77,7 +77,7 @@ const insertStatusToDb = async (statusDetails) => {
 
     // Insert status directly without clientGuid
     console.log('Attempting to insert status record:', JSON.stringify(newStatusRecord, null, 2));
-    
+
     try {
       const { data, error: insertError } = await supabase
         .from("messages_log")
