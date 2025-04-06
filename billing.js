@@ -122,14 +122,14 @@ router.get('/stats', checkAuth, async (req, res) => {
     // Calculate metrics
     for (const [user, messages] of Object.entries(sessions)) {
       if (!messages || messages.length === 0) continue;
-      
+
       // Sort messages by timestamp
       messages.sort((a, b) => a.timestamp - b.timestamp);
-      
+
       // Group into sessions with 23h50m window
       let activeSessions = [];
       let currentSession = [messages[0]];
-      
+
       // Group messages into sessions
       for (let i = 1; i < messages.length; i++) {
         const timeDiff = messages[i].timestamp.diff(currentSession[0].timestamp, 'minutes');
@@ -148,29 +148,14 @@ router.get('/stats', checkAuth, async (req, res) => {
       sessionCount += activeSessions.length;
       carrierCount += activeSessions.length;
       utilityCount += activeSessions.length;
-      
+
       // Calculate costs per unique session
       carrierTotal += activeSessions.length * 0.01; // $0.01 once per session
       utilityTotal += activeSessions.length * 0.0076; // $0.0076 once per session
-      
-      // Store session groups for any additional processing
-      const sessionGroups = [...userSessions];
-      
-      for (let i = 1; i < messages.length; i++) {
-        const timeDiff = messages[i].timestamp.diff(currentSession[0].timestamp, 'minutes');
-        if (timeDiff <= 1430) { // 23 hours and 50 minutes in minutes
-          currentSession.push(messages[i]);
-        } else {
-          sessionGroups.push(currentSession);
-          currentSession = [messages[i]];
-        }
-      }
-      if (currentSession.length > 0) {
-        sessionGroups.push(currentSession);
-      }
 
-      billableSessions += sessionGroups.length;
-      
+
+      billableSessions += activeSessions.length;
+
       // Calculate session cost as sum of carrier and utility fees per session
       sessionCost = carrierTotal + utilityTotal;
 
@@ -180,7 +165,7 @@ router.get('/stats', checkAuth, async (req, res) => {
 
     // Count unique mobile numbers for MAU
     monthlyActiveUsers = Object.keys(sessions).length;
-    
+
     // Calculate total cost
     totalCost = sessionCost + mauCost;
 
