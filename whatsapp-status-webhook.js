@@ -113,7 +113,12 @@ const insertStatusToDb = async (statusDetails) => {
       recipientId
     });
   } catch (err) {
-    console.error(`Error inserting status: ${err.message}`);
+    console.error('Failed to insert status:', {
+      error: err.message,
+      statusDetails,
+      timestamp: new Date().toISOString()
+    });
+    throw err; // Propagate error up
   }
 };
 
@@ -179,6 +184,22 @@ router.post('/', async (req, res) => {
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Body:", JSON.stringify(req.body, null, 2));
   console.log("================================");
+
+  // Check for status updates first
+  if (req.body?.entry?.[0]?.changes?.[0]?.value?.statuses) {
+    const statusUpdates = req.body.entry[0].changes[0].value.statuses;
+    console.log('Processing status updates:', JSON.stringify(statusUpdates, null, 2));
+    
+    for (const status of statusUpdates) {
+      await insertStatusToDb({
+        messageId: status.id,
+        recipientId: status.recipient_id,
+        status: status.status,
+        timestamp: status.timestamp,
+        errorDetails: status.errors ? status.errors[0] : null
+      });
+    }
+  }
 
   // Handle text messages
   if (req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text) {
