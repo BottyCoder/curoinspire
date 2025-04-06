@@ -53,7 +53,7 @@ const insertStatusToDb = async (statusDetails) => {
 router.get('/', (req, res) => {
   console.log("=== INCOMING WHATSAPP VERIFICATION REQUEST ===");
   console.log("Query params:", req.query);
-  
+
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
@@ -74,7 +74,7 @@ router.post('/', async (req, res) => {
 
   try {
     console.log('Full webhook payload:', JSON.stringify(req.body, null, 2));
-    
+
     // Handle both direct status updates and message status updates
     const updates = req.body?.entry?.[0]?.changes?.[0]?.value;
     const statusUpdates = updates?.statuses || [];
