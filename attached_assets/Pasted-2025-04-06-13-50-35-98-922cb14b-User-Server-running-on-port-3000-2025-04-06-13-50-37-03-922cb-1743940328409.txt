@@ -1,0 +1,136 @@
+2025-04-06 13:50:35.98
+922cb14b
+User
+✅ Server running on port 3000
+2025-04-06 13:50:37.03
+922cb14b
+User
+Incoming request: GET /
+2025-04-06 13:50:37.06
+922cb14b
+User
+Incoming request: GET /messagestatus.html
+2025-04-06 13:51:08.71
+922cb14b
+User
+Incoming request: POST /client-send-message
+2025-04-06 13:51:08.71
+922cb14b
+User
+🚀 Received request to /client-send-message {
+2025-04-06 13:51:08.71
+922cb14b
+User
+recipient_number: '27824537125',
+2025-04-06 13:51:08.71
+922cb14b
+User
+message_body: 'Test message',
+2025-04-06 13:51:08.71
+922cb14b
+User
+channel: 'whatsapp',
+2025-04-06 13:51:08.71
+922cb14b
+User
+client_guid: '8c4e796e-e92b-4c45-9870-4b6aabfa2859',
+2025-04-06 13:51:08.71
+922cb14b
+User
+customer_name: 'Test Customer'
+2025-04-06 13:51:08.71
+922cb14b
+User
+}
+2025-04-06 13:51:08.71
+922cb14b
+User
+📩 Sending WhatsApp message to 27824537125: "Test message"
+2025-04-06 13:51:11.50
+922cb14b
+User
+📝 Request for number: 27824537125
+2025-04-06 13:51:11.50
+922cb14b
+User
+📝 Generated tracking code: 79d767ca-e74a-4851-a07d-8c699449f5c2
+2025-04-06 13:51:11.50
+922cb14b
+User
+📝 Attempting to store message with data: {
+2025-04-06 13:51:11.50
+922cb14b
+User
+original_wamid: 'wamid.HBgLMjc4MjQ1MzcxMjUVAgARGBI2NjRFQzU2RDI1MTNENTBFRTcA',
+2025-04-06 13:51:11.50
+922cb14b
+User
+tracking_code: '79d767ca-e74a-4851-a07d-8c699449f5c2',
+2025-04-06 13:51:11.50
+922cb14b
+User
+client_guid: '8c4e796e-e92b-4c45-9870-4b6aabfa2859',
+2025-04-06 13:51:11.50
+922cb14b
+User
+mobile_number: '27824537125',
+2025-04-06 13:51:11.50
+922cb14b
+User
+customer_name: 'Test Customer',
+2025-04-06 13:51:11.50
+922cb14b
+User
+message: 'Test message',
+2025-04-06 13:51:11.50
+922cb14b
+User
+customer_response: null,
+2025-04-06 13:51:11.50
+922cb14b
+User
+channel: 'whatsapp',
+2025-04-06 13:51:11.50
+922cb14b
+User
+status: 'sent',
+2025-04-06 13:51:11.50
+922cb14b
+User
+timestamp: '2025-04-06T11:51:08Z'
+2025-04-06 13:51:11.50
+922cb14b
+User
+}
+2025-04-06 13:51:11.91
+922cb14b
+User
+✅ Message stored in database. Tracking code: 79d767ca-e74a-4851-a07d-8c699449f5c2
+2025-04-06 13:51:11.91
+922cb14b
+User
+✅ Full inserted data: [
+2025-04-06 13:51:11.91
+922cb14b
+User
+{
+2025-04-06 13:51:11.91
+922cb14b
+User
+id: 'a8524686-d5aa-43ba-8a7e-bf58b9eef846',
+2025-04-06 13:51:11.91
+922cb14b
+User
+tracking_code: '79d767ca-e74a-4851-a07d-8c699449f5c2',
+2025-04-06 13:51:11.91
+922cb14b
+User
+client_guid: '8c4e796e-e92b-4c45-9870-4b6aabfa2859',
+2025-04-06 13:51:11.91
+922cb14b
+User
+mobile_number: '27824537125',
+2025-04-06 13:51:11.91
+922cb14b
+User
+wa_id: null,
