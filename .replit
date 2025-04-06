@@ -1,11 +1,12 @@
+
 modules = [ "web", "nodejs-20"]
 run = "npm run start"
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-23_11"
 
 [deployment]
-run = ["sh", "-c", "PORT=3000 NODE_ENV=production node server.js"]
+run = ["node", "server.js"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
