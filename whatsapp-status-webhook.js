@@ -129,22 +129,20 @@ router.post('/', async (req, res) => {
   try {
     console.log('Full webhook payload:', JSON.stringify(req.body, null, 2));
 
-    // Handle both direct status updates and message status updates
-    const updates = req.body?.entry?.[0]?.changes?.[0]?.value;
-    const statusUpdates = updates?.statuses || [];
-    const messageStatuses = updates?.messages || [];
-
-    if (!statusUpdates.length && !messageStatuses.length) {
+    // Handle status updates
+    const value = req.body?.entry?.[0]?.changes?.[0]?.value;
+    
+    if (!value) {
       return res.status(200).send('No updates to process');
     }
 
-    // Process status updates
-    for (const status of statusUpdates) {
+    // Handle direct status in value object
+    if (value.status) {
       await insertStatusToDb({
-        messageId: status.id,
-        recipientId: status.recipient_id,
-        status: status.status,
-        timestamp: status.timestamp
+        messageId: value.id,
+        recipientId: value.recipient_id || value.metadata?.recipient_id,
+        status: value.status,
+        timestamp: req.body?.entry?.[0]?.changes?.[0]?.timestamp
       });
     }
 
