@@ -371,6 +371,20 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'messagestatus.html'));
 });
 
+// Set default NODE_ENV if not defined
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Handle process signals
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM signal, shutting down gracefully');
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    console.log('Received SIGINT signal, shutting down gracefully');
+    process.exit(0);
+});
+
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n✅ Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+    console.log(`\n✅ Server running on port ${PORT} in ${NODE_ENV} mode`);
 });
