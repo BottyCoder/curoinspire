@@ -76,9 +76,13 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+  const requestTimestamp = new Date().toISOString();
   console.log("\n=== INCOMING WHATSAPP STATUS WEBHOOK ===");
-  console.log("Timestamp:", new Date().toISOString());
-  console.log("Headers:", JSON.stringify(req.headers, null, 2));
+  console.log(`Webhook Request Time: ${requestTimestamp}`);
+  console.log("Request Method:", req.method);
+  console.log("Content-Type:", req.headers['content-type']);
+  console.log("X-Hub-Signature:", req.headers['x-hub-signature']);
+  console.log("Raw Body Length:", JSON.stringify(req.body).length);
   console.log("Raw Body:", JSON.stringify(req.body, null, 2));
   
   // Detailed payload parsing
