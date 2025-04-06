@@ -1,6 +1,6 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
-const router = express.Router();  // Initialize router instance
+const router = express.Router();
 
 // Initialize Supabase client
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -15,7 +15,7 @@ const insertStatusToDb = async (statusDetails) => {
   console.log('Status details:', JSON.stringify(statusDetails, null, 2));
 
   try {
-    const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
+    const { messageId, recipientId, status, timestamp, errorDetails } = statusDetails;
     const messageTime = new Date();
 
     // First check if user was already charged MAU this month
@@ -41,7 +41,7 @@ const insertStatusToDb = async (statusDetails) => {
 
     const shouldChargeSession = !existingSession || existingSession.length === 0;
     const shouldChargeMau = !existingMAU || existingMAU.length === 0;
-    
+
     const utilityFee = shouldChargeSession ? 0.0076 : 0;
     const carrierFee = shouldChargeSession ? 0.01 : 0;
     const mauCost = shouldChargeMau ? 0.06 : 0;
@@ -67,8 +67,6 @@ const insertStatusToDb = async (statusDetails) => {
 
     // Convert Unix timestamp to ISO format for message timestamp
     const messageTimestamp = new Date(timestamp * 1000).toISOString();
-
-    // Use current time for status update timestamp
     const currentTimestamp = new Date().toISOString();
 
     if (!messageId || !recipientId || !status) {
@@ -76,7 +74,6 @@ const insertStatusToDb = async (statusDetails) => {
       throw new Error('Missing required fields for status update');
     }
 
-    // Create new status record with available data - no clientGuid needed for status updates
     const newStatusRecord = {
       original_wamid: messageId,
       mobile_number: recipientId,
@@ -86,255 +83,74 @@ const insertStatusToDb = async (statusDetails) => {
       status_timestamp: currentTimestamp,
       error_code: errorDetails ? errorDetails.code : null,
       error_message: errorDetails ? errorDetails.message : null,
-      message_type: 'status_update'  // Explicitly mark as status update
+      message_type: 'status_update'
     };
 
     console.log('Created status record:', newStatusRecord);
 
-    // Insert status directly without clientGuid
-    console.log('Attempting to insert status record:', JSON.stringify(newStatusRecord, null, 2));
+    const { data, error: insertError } = await supabase
+      .from("messages_log")
+      .insert([newStatusRecord])
+      .select();
 
-    try {
-      const { data, error: insertError } = await supabase
-        .from("messages_log")
-        .insert([newStatusRecord])
-        .select();
-
-      if (insertError) {
-        console.error('Database insertion error:', insertError);
-        console.error('Failed record:', JSON.stringify(newStatusRecord, null, 2));
-        console.error('Supabase URL:', process.env.SUPABASE_URL);
-        console.error('Using service role key:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-        throw new Error(`Error inserting status: ${insertError.message}`);
-      }
-
-      console.log('Successfully inserted status record:', {
-        wamid: messageId,
-        data: data,
-        timestamp: new Date().toISOString()
-      });
-
-      return data;
-    } catch (error) {
-      console.error('Critical error during status insert:', error);
-      console.error('Status payload:', JSON.stringify(newStatusRecord, null, 2));
-      throw error; // Re-throw to trigger proper error handling
+    if (insertError) {
+      console.error('Database insertion error:', insertError);
+      throw new Error(`Error inserting status: ${insertError.message}`);
     }
 
-    // Log successful insertion with timestamp
-    console.log(`[${new Date().toISOString()}] Successfully inserted status:`, {
+    console.log('Successfully inserted status record:', {
       wamid: messageId,
-      status,
-      recipientId
+      data: data,
+      timestamp: new Date().toISOString()
     });
+
+    return data;
   } catch (err) {
     console.error('Failed to insert status:', {
       error: err.message,
       statusDetails,
       timestamp: new Date().toISOString()
     });
-    throw err; // Propagate error up
-  }
-};
-
-
-// Function to handle location messages
-const handleLocationMessage = async (locationData) => {
-  try {
-    const { messageId, recipientId, latitude, longitude, name, address } = locationData;
-    const timestamp = new Date().toISOString();
-
-    // Store in Supabase
-    const { data, error } = await supabase
-      .from("messages_log")
-      .insert([{
-        original_wamid: messageId,
-        mobile_number: recipientId,
-        channel: "whatsapp",
-        message_type: "location",
-        latitude,
-        longitude,
-        location_name: name,
-        location_address: address,
-        timestamp
-      }]);
-
-    if (error) throw error;
-
-    // Forward to Inspire
-    const inspirePayload = {
-      ClientGuid: data[0].client_guid,
-      Timestamp: timestamp,
-      Channel: "whatsapp",
-      MessageType: "location",
-      Location: {
-        Latitude: latitude,
-        Longitude: longitude,
-        Name: name,
-        Address: address
-      },
-      apiKey: process.env.INSPIRE_API_KEY
-    };
-
-    await axios.post(
-      "https://inspire-ohs.com/api/V3/WA/GetWaMsg",
-      inspirePayload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.INSPIRE_API_KEY}`
-        }
-      }
-    );
-
-    console.log("Location message processed successfully");
-  } catch (err) {
-    console.error("Error handling location message:", err);
+    throw err;
   }
 };
 
 // Define the POST route for the webhook
 router.post('/', async (req, res) => {
-  console.log("=== INCOMING WHATSAPP WEBHOOK ===");
+  console.log("=== INCOMING WHATSAPP STATUS WEBHOOK ===");
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Body:", JSON.stringify(req.body, null, 2));
-  console.log("================================");
 
-  // Check for status updates first
-  console.log('=== CHECKING FOR STATUS UPDATES ===');
-  console.log('Request body:', JSON.stringify(req.body, null, 2));
-  
-  if (req.body?.entry?.[0]?.changes?.[0]?.value?.statuses) {
+  try {
+    if (!req.body?.entry?.[0]?.changes?.[0]?.value?.statuses) {
+      console.log("⚠️ No status updates in payload");
+      return res.status(200).send('No status updates to process');
+    }
+
     const statusUpdates = req.body.entry[0].changes[0].value.statuses;
-    console.log('✅ Found status updates:', JSON.stringify(statusUpdates, null, 2));
-    
-    for (const status of statusUpdates) {
-      await insertStatusToDb({
+    console.log('✅ Processing status updates:', JSON.stringify(statusUpdates, null, 2));
+
+    const processPromises = statusUpdates.map(status => 
+      insertStatusToDb({
         messageId: status.id,
         recipientId: status.recipient_id,
         status: status.status,
         timestamp: status.timestamp,
         errorDetails: status.errors ? status.errors[0] : null
-      });
-    }
+      }).catch(err => {
+        console.error(`Failed to process status for message ${status.id}:`, err);
+        return null;
+      })
+    );
+
+    await Promise.all(processPromises);
+    console.log(`✅ Successfully processed ${statusUpdates.length} status updates`);
+
+    return res.status(200).send('Status updates processed successfully');
+  } catch (error) {
+    console.error('❌ Error processing webhook:', error);
+    return res.status(200).send('Processed with errors');
   }
-
-  // Handle text messages
-  if (req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text) {
-    const message = req.body.entry[0].changes[0].value.messages[0];
-    const text = message.text.body;
-    const from = message.from;
-
-    try {
-      // Get tracking code from database
-      const { data: trackingData } = await supabase
-        .from("messages_log")
-        .select("tracking_code")
-        .eq("mobile_number", from)
-        .order("timestamp", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (trackingData?.tracking_code) {
-        // Forward to receive-reply endpoint
-        await axios.post("https://inspire.botforce.co.za/receive-reply", {
-          tracking_code: trackingData.tracking_code,
-          reply_message: text
-        });
-      }
-    } catch (err) {
-      console.error("Error processing text message:", err);
-    }
-  }
-
-  // Handle location messages
-  if (req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.location) {
-    const location = req.body.entry[0].changes[0].value.messages[0].location;
-    const messageId = req.body.entry[0].changes[0].value.messages[0].id;
-    const recipientId = req.body.entry[0].changes[0].value.messages[0].from;
-
-    console.log("Received location:", location);
-
-    await handleLocationMessage({
-      messageId,
-      recipientId,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      name: location.name || null,
-      address: location.address || null
-    }).catch(err => {
-      console.error("Failed to process location:", err);
-    });
-  }
-
-  // If no body is received, log an error
-  if (!req.body || Object.keys(req.body).length === 0) {
-    console.log("⚠️ Received empty body");
-    return res.status(400).send('No data received');
-  }
-
-  console.log('=== Processing WhatsApp Status Webhook ===');
-  console.log('Headers:', req.headers);
-  console.log('Raw Body:', JSON.stringify(req.body, null, 2));
-  
-  // Process the status information from the WhatsApp webhook payload
-  const { object, entry } = req.body;
-  
-  // Log parsed data
-  console.log('Parsed webhook data:', {
-    object,
-    entryCount: entry?.length || 0
-  });
-
-  // Example: Check if the incoming data contains the expected structure
-  if (object === "whatsapp_business_account" && Array.isArray(entry)) {
-    entry.forEach((entryItem) => {
-      const { id, changes } = entryItem;
-      if (Array.isArray(changes)) {
-        changes.forEach((change) => {
-          const { value } = change;
-          if (value && value.statuses && Array.isArray(value.statuses)) {
-            value.statuses.forEach((statusItem) => {
-              const { id: wamid, status, timestamp, recipient_id, errors } = statusItem;
-
-              // Log the status details
-              console.log(`WAMID: ${wamid}`);
-              console.log(`Status: ${status}`);
-              console.log(`Timestamp: ${timestamp}`);
-              console.log(`Recipient ID: ${recipient_id}`);
-
-              // If there are errors, log them as well
-              if (errors && errors.length > 0) {
-                errors.forEach((error) => {
-                  console.error(`Error: ${error.message}`);
-                });
-              }
-
-              // Insert status into the database with the original wamid
-              insertStatusToDb({
-                messageId: wamid, // Direct WAMID from WhatsApp webhook
-                recipientId: recipient_id,
-                status,
-                timestamp,
-                errorDetails: errors ? errors[0] : null,
-                // Status updates don't have clientGuid
-              });
-            });
-          }
-        });
-      }
-    });
-  } else {
-    console.log("⚠️ Invalid data structure or unexpected webhook object");
-    console.log("Received object type:", object);
-    console.log("Entry structure:", JSON.stringify(entry, null, 2));
-    return res.status(400).send('Invalid data structure');
-  }
-
-  // Send a 200 OK response after processing
-  console.log('Successfully processed webhook request');
-  res.status(200).send('Webhook processed successfully');
 });
 
-// Export the router for use in server.js
 module.exports = router;
