@@ -77,13 +77,41 @@ router.get('/', (req, res) => {
 
 router.post('/', async (req, res) => {
   const requestTimestamp = new Date().toISOString();
-  console.log("\n=== INCOMING WHATSAPP STATUS WEBHOOK ===");
-  console.log(`Webhook Request Time: ${requestTimestamp}`);
-  console.log("Request Method:", req.method);
-  console.log("Content-Type:", req.headers['content-type']);
-  console.log("X-Hub-Signature:", req.headers['x-hub-signature']);
-  console.log("Raw Body Length:", JSON.stringify(req.body).length);
-  console.log("Raw Body:", JSON.stringify(req.body, null, 2));
+  console.log("\n======== WHATSAPP WEBHOOK ANALYSIS ========");
+  console.log(`Timestamp: ${requestTimestamp}`);
+  console.log("\n=== REQUEST HEADERS ===");
+  console.log(JSON.stringify(req.headers, null, 2));
+  
+  console.log("\n=== FULL PAYLOAD STRUCTURE ===");
+  const payload = req.body;
+  console.log(JSON.stringify(payload, null, 2));
+
+  if (payload?.entry?.[0]?.changes?.[0]?.value) {
+    const value = payload.entry[0].changes[0].value;
+    console.log("\n=== MESSAGE STRUCTURE ANALYSIS ===");
+    console.log("Has Statuses:", !!value.statuses);
+    console.log("Status Count:", value.statuses?.length || 0);
+    console.log("Has Messages:", !!value.messages);
+    console.log("Message Count:", value.messages?.length || 0);
+    console.log("Metadata:", value.metadata || "None");
+    
+    if (value.statuses) {
+      console.log("\n=== STATUS DETAILS ===");
+      value.statuses.forEach((status, index) => {
+        console.log(`\nStatus #${index + 1}:`);
+        console.log(JSON.stringify(status, null, 2));
+      });
+    }
+    
+    if (value.messages) {
+      console.log("\n=== MESSAGE DETAILS ===");
+      value.messages.forEach((msg, index) => {
+        console.log(`\nMessage #${index + 1}:`);
+        console.log(JSON.stringify(msg, null, 2));
+      });
+    }
+  }
+  console.log("\n=========================================");
 
   // Detailed payload parsing
   const entry = req.body?.entry?.[0];
