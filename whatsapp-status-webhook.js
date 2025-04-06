@@ -55,6 +55,11 @@ const insertStatusToDb = async (statusDetails) => {
     // Use current time for status update timestamp
     const currentTimestamp = new Date().toISOString();
 
+    if (!messageId || !recipientId || !status) {
+      console.error('Missing required fields:', { messageId, recipientId, status });
+      throw new Error('Missing required fields for status update');
+    }
+
     // Create new status record with available data - no clientGuid needed for status updates
     const newStatusRecord = {
       original_wamid: messageId,
@@ -68,16 +73,21 @@ const insertStatusToDb = async (statusDetails) => {
       message_type: 'status_update'  // Explicitly mark as status update
     };
 
+    console.log('Created status record:', newStatusRecord);
+
     // Insert status directly without clientGuid
+    console.log('Attempting to insert status record:', newStatusRecord);
+    
     const { data, error: insertError } = await supabase
       .from("messages_log")
-      .insert([newStatusRecord])
-      .select();
+      .insert([newStatusRecord]);
 
     if (insertError) {
       console.error('Database insertion error:', insertError);
       console.error('Failed record:', newStatusRecord);
       throw new Error(`Error inserting status: ${insertError.message}`);
+    } else {
+      console.log('Successfully inserted status record with wamid:', messageId);
     }
 
     // Log successful insertion with timestamp
