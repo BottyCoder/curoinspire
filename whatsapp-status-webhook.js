@@ -81,10 +81,33 @@ router.post('/', async (req, res) => {
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Raw Body:", JSON.stringify(req.body, null, 2));
   
-  // Log full request structure
+  // Detailed payload parsing
   const entry = req.body?.entry?.[0];
   const changes = entry?.changes?.[0];
   const value = changes?.value;
+  
+  console.log("\nPayload Structure Analysis:");
+  console.log("Entry Structure:", {
+    hasEntry: !!req.body?.entry,
+    entryLength: req.body?.entry?.length,
+    firstEntry: entry
+  });
+  
+  console.log("Changes Structure:", {
+    hasChanges: !!entry?.changes,
+    changesLength: entry?.changes?.length,
+    firstChange: changes,
+    field: changes?.field
+  });
+  
+  console.log("Value Contents:", {
+    hasStatuses: !!value?.statuses,
+    statusesLength: value?.statuses?.length,
+    hasMessages: !!value?.messages,
+    messagesLength: value?.messages?.length,
+    messaging_product: value?.messaging_product,
+    metadata: value?.metadata
+  });
   
   console.log("\nRequest Structure:");
   console.log("Entry:", JSON.stringify(entry, null, 2));
