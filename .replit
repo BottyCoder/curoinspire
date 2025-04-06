@@ -5,7 +5,7 @@ run = "npm run start"
 channel = "stable-24_05"
 
 [deployment]
-run = ["sh", "-c", "NODE_ENV=production node server.js"]
+run = ["sh", "-c", "PORT=3000 NODE_ENV=production node server.js"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
@@ -31,4 +31,4 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "NODE_ENV=production node server.js"
+args = "PORT=3000 NODE_ENV=production node server.js"
