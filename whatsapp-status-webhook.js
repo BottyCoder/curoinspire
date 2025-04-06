@@ -76,14 +76,28 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  console.log("=== INCOMING WHATSAPP STATUS WEBHOOK ===");
+  console.log("\n=== INCOMING WHATSAPP STATUS WEBHOOK ===");
+  console.log("Timestamp:", new Date().toISOString());
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
   console.log("Raw Body:", JSON.stringify(req.body, null, 2));
   
-  const updates = req.body?.entry?.[0]?.changes?.[0]?.value;
-  console.log("Parsed Updates:", JSON.stringify(updates, null, 2));
-  console.log("Status Updates:", JSON.stringify(updates?.statuses, null, 2));
-  console.log("Message Updates:", JSON.stringify(updates?.messages, null, 2));
+  // Log full request structure
+  const entry = req.body?.entry?.[0];
+  const changes = entry?.changes?.[0];
+  const value = changes?.value;
+  
+  console.log("\nRequest Structure:");
+  console.log("Entry:", JSON.stringify(entry, null, 2));
+  console.log("Changes:", JSON.stringify(changes, null, 2));
+  console.log("Value:", JSON.stringify(value, null, 2));
+  
+  // Log specific updates
+  const statusUpdates = value?.statuses || [];
+  const messageUpdates = value?.messages || [];
+  
+  console.log("\nFound Updates:");
+  console.log(`Status Updates Count: ${statusUpdates.length}`);
+  console.log(`Message Updates Count: ${messageUpdates.length}`);
 
   try {
     console.log('Full webhook payload:', JSON.stringify(req.body, null, 2));
