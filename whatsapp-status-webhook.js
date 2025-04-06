@@ -140,10 +140,15 @@ router.post('/', async (req, res) => {
 
     // Handle statuses array
     if (value.statuses && Array.isArray(value.statuses)) {
-      console.log(`Processing ${value.statuses.length} status updates`);
+      console.log(`\n=== Processing ${value.statuses.length} Status Updates ===`);
+      console.log('Full value object:', JSON.stringify(value, null, 2));
 
       for (const status of value.statuses) {
-        console.log('Processing status:', status);
+        console.log('\nProcessing Status Update:');
+        console.log('Status ID:', status.id);
+        console.log('Status:', status.status);
+        console.log('Recipient:', status.recipient_id);
+        console.log('Timestamp:', status.timestamp);
         promises.push(insertStatusToDb({
           messageId: status.id,
           recipientId: status.recipient_id || value.metadata?.display_phone_number,
