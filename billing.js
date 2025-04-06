@@ -49,25 +49,25 @@ router.get('/stats', checkAuth, async (req, res) => {
       .select('*')
       .gte('message_timestamp', startOfMonth.format());
 
-    // Log query time info
-    console.log('Query Time Info:', {
-      currentTime: now.format(),
-      startOfMonth: startOfMonth.format(),
-      timezone: now.tz()
-    });
+    // // Log query time info
+    // console.log('Query Time Info:', {
+    //   currentTime: now.format(),
+    //   startOfMonth: startOfMonth.format(),
+    //   timezone: now.tz()
+    // });
 
-    console.log('Full billing records:', JSON.stringify(billingRecords, null, 2));
-    console.log('Query conditions:', {
-      startOfMonth: startOfMonth.toISOString(),
-      currentTime: now.toISOString()
-    });
+    // console.log('Full billing records:', JSON.stringify(billingRecords, null, 2));
+    // console.log('Query conditions:', {
+    //   startOfMonth: startOfMonth.toISOString(),
+    //   currentTime: now.toISOString()
+    // });
 
     if (queryError) {
       console.error('Supabase query error:', queryError);
       throw queryError;
     }
 
-    console.log('Billing records fetched:', billingRecords?.length || 0);
+    // console.log('Billing records fetched:', billingRecords?.length || 0);
 
     if (!billingRecords || billingRecords.length === 0) {
       return res.json({
@@ -108,7 +108,7 @@ router.get('/stats', checkAuth, async (req, res) => {
         },
         is_mau_charged: record.is_mau_charged
       });
-      console.log(`Added record for ${mobileNumber}, session start: ${record.session_start_time}`);
+      // console.log(`Added record for ${mobileNumber}, session start: ${record.session_start_time}`);
       return acc;
     }, {});
 
