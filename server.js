@@ -43,6 +43,7 @@ app.use('/billing', billingRoutes); // Mount the router for the webhook
 
 // Add route handler for get-message-status
 app.get('/get-message-status', async (req, res) => {
+    console.log('GET /get-message-status called with:', req.query);
     const { phone_number } = req.query;
 
     if (!phone_number) {

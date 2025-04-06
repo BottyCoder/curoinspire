@@ -234,8 +234,18 @@ router.post('/', async (req, res) => {
     return res.status(400).send('No data received');
   }
 
+  console.log('=== Processing WhatsApp Status Webhook ===');
+  console.log('Headers:', req.headers);
+  console.log('Raw Body:', JSON.stringify(req.body, null, 2));
+  
   // Process the status information from the WhatsApp webhook payload
   const { object, entry } = req.body;
+  
+  // Log parsed data
+  console.log('Parsed webhook data:', {
+    object,
+    entryCount: entry?.length || 0
+  });
 
   // Example: Check if the incoming data contains the expected structure
   if (object === "whatsapp_business_account" && Array.isArray(entry)) {
