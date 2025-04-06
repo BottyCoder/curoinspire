@@ -28,9 +28,24 @@ const insertStatusToDb = async (statusDetails) => {
       .gte('message_month', startOfMonth.toISOString())
       .limit(1);
 
+    // Check for existing session in last 23h50m
+    const sessionWindow = new Date(messageTime);
+    sessionWindow.setMinutes(sessionWindow.getMinutes() - 1430); // 23h50m in minutes
+
+    const { data: existingSession } = await supabase
+      .from('billing_records')
+      .select('id')
+      .eq('mobile_number', recipientId)
+      .gte('message_timestamp', sessionWindow.toISOString())
+      .limit(1);
+
+    const shouldChargeSession = !existingSession || existingSession.length === 0;
     const shouldChargeMau = !existingMAU || existingMAU.length === 0;
+    
+    const utilityFee = shouldChargeSession ? 0.0076 : 0;
+    const carrierFee = shouldChargeSession ? 0.01 : 0;
     const mauCost = shouldChargeMau ? 0.06 : 0;
-    const totalCost = 0.0076 + 0.01 + mauCost; // utility + carrier + mau
+    const totalCost = utilityFee + carrierFee + mauCost;
 
     const { error: billingError } = await supabase
       .from('billing_records')
@@ -38,10 +53,10 @@ const insertStatusToDb = async (statusDetails) => {
         mobile_number: recipientId,
         whatsapp_message_id: messageId,
         message_timestamp: messageTime,
-        session_start_time: messageTime,
+        session_start_time: shouldChargeSession ? messageTime : null,
         message_month: messageTime,
-        cost_utility: 0.0076,
-        cost_carrier: 0.01,
+        cost_utility: utilityFee,
+        cost_carrier: carrierFee,
         cost_mau: mauCost,
         total_cost: totalCost,
         is_mau_charged: shouldChargeMau,
