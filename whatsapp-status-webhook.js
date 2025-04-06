@@ -73,22 +73,36 @@ router.post('/', async (req, res) => {
   console.log("Body:", JSON.stringify(req.body, null, 2));
 
   try {
-    const statusUpdates = req.body?.entry?.[0]?.changes?.[0]?.value?.statuses;
+    console.log('Full webhook payload:', JSON.stringify(req.body, null, 2));
+    
+    // Handle both direct status updates and message status updates
+    const updates = req.body?.entry?.[0]?.changes?.[0]?.value;
+    const statusUpdates = updates?.statuses || [];
+    const messageStatuses = updates?.messages || [];
 
-    if (!statusUpdates) {
-      return res.status(200).send('No status updates to process');
+    if (!statusUpdates.length && !messageStatuses.length) {
+      return res.status(200).send('No updates to process');
     }
 
-    console.log('Processing status updates:', JSON.stringify(statusUpdates, null, 2));
-
-    await Promise.all(statusUpdates.map(status => 
-      insertStatusToDb({
+    // Process status updates
+    for (const status of statusUpdates) {
+      await insertStatusToDb({
         messageId: status.id,
         recipientId: status.recipient_id,
         status: status.status,
         timestamp: status.timestamp
-      })
-    ));
+      });
+    }
+
+    // Process message statuses
+    for (const msg of messageStatuses) {
+      await insertStatusToDb({
+        messageId: msg.id,
+        recipientId: msg.from,
+        status: 'received',
+        timestamp: Math.floor(Date.now() / 1000)
+      });
+    }
 
     return res.status(200).send('Status updates processed successfully');
   } catch (error) {
