@@ -55,19 +55,20 @@ const insertStatusToDb = async (statusDetails) => {
     // Use current time for status update timestamp
     const currentTimestamp = new Date().toISOString();
 
-    // Create new status record with available data
+    // Create new status record with available data - no clientGuid needed for status updates
     const newStatusRecord = {
-      original_wamid: messageId, // Store raw WAMID from webhook
+      original_wamid: messageId,
       mobile_number: recipientId,
       channel: "whatsapp", 
       status: status,
-      timestamp: messageTimestamp,        // Original message timestamp
-      status_timestamp: currentTimestamp, // When we received the status
+      timestamp: messageTimestamp,
+      status_timestamp: currentTimestamp,
       error_code: errorDetails ? errorDetails.code : null,
-      error_message: errorDetails ? errorDetails.message : null
+      error_message: errorDetails ? errorDetails.message : null,
+      message_type: 'status_update'  // Explicitly mark as status update
     };
 
-    // Insert status into the database with the original wamid
+    // Insert status directly without clientGuid
     const { data, error: insertError } = await supabase
       .from("messages_log")
       .insert([newStatusRecord])
@@ -241,7 +242,7 @@ router.post('/', async (req, res) => {
                 status,
                 timestamp,
                 errorDetails: errors ? errors[0] : null,
-                clientGuid
+                // Status updates don't have clientGuid
               });
             });
           }
