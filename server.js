@@ -26,7 +26,18 @@ app.use(cors());
 // Debug logging
 app.use((req, res, next) => {
     console.log('Incoming request:', req.method, req.url);
+    res.on('finish', () => {
+        console.log('Response status:', res.statusCode);
+    });
     next();
+});
+
+app.use((err, req, res, next) => {
+    console.error('Global error handler:', err);
+    res.status(500).json({ 
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
 // Serve static files from the public directory

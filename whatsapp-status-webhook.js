@@ -84,26 +84,26 @@ router.post('/', async (req, res) => {
   console.log("X-Hub-Signature:", req.headers['x-hub-signature']);
   console.log("Raw Body Length:", JSON.stringify(req.body).length);
   console.log("Raw Body:", JSON.stringify(req.body, null, 2));
-  
+
   // Detailed payload parsing
   const entry = req.body?.entry?.[0];
   const changes = entry?.changes?.[0];
   const value = changes?.value;
-  
+
   console.log("\nPayload Structure Analysis:");
   console.log("Entry Structure:", {
     hasEntry: !!req.body?.entry,
     entryLength: req.body?.entry?.length,
     firstEntry: entry
   });
-  
+
   console.log("Changes Structure:", {
     hasChanges: !!entry?.changes,
     changesLength: entry?.changes?.length,
     firstChange: changes,
     field: changes?.field
   });
-  
+
   console.log("Value Contents:", {
     hasStatuses: !!value?.statuses,
     statusesLength: value?.statuses?.length,
@@ -112,16 +112,16 @@ router.post('/', async (req, res) => {
     messaging_product: value?.messaging_product,
     metadata: value?.metadata
   });
-  
+
   console.log("\nRequest Structure:");
   console.log("Entry:", JSON.stringify(entry, null, 2));
   console.log("Changes:", JSON.stringify(changes, null, 2));
   console.log("Value:", JSON.stringify(value, null, 2));
-  
+
   // Log specific updates
   const statusUpdates = value?.statuses || [];
   const messageUpdates = value?.messages || [];
-  
+
   console.log("\nFound Updates:");
   console.log(`Status Updates Count: ${statusUpdates.length}`);
   console.log(`Message Updates Count: ${messageUpdates.length}`);
@@ -129,37 +129,65 @@ router.post('/', async (req, res) => {
   try {
     console.log('Full webhook payload:', JSON.stringify(req.body, null, 2));
 
-    // Handle status updates
     const value = req.body?.entry?.[0]?.changes?.[0]?.value;
-    
+
     if (!value) {
+      console.log('No value object in webhook payload');
       return res.status(200).send('No updates to process');
     }
 
-    // Handle direct status in value object
-    if (value.status) {
-      await insertStatusToDb({
+    const promises = [];
+
+    // Handle direct status updates
+    if (value.statuses && Array.isArray(value.statuses)) {
+      console.log(`Processing ${value.statuses.length} status updates`);
+
+      for (const status of value.statuses) {
+        promises.push(insertStatusToDb({
+          messageId: status.id,
+          recipientId: status.recipient_id,
+          status: status.status,
+          timestamp: status.timestamp || Math.floor(Date.now() / 1000)
+        }));
+      }
+    }
+
+    // Handle message status updates
+    if (value.messages && Array.isArray(value.messages)) {
+      console.log(`Processing ${value.messages.length} message updates`);
+
+      for (const msg of value.messages) {
+        promises.push(insertStatusToDb({
+          messageId: msg.id,
+          recipientId: msg.from,
+          status: 'received',
+          timestamp: Math.floor(Date.now() / 1000)
+        }));
+      }
+    }
+
+    // Handle single status update
+    if (value.status && value.id) {
+      console.log('Processing single status update');
+      promises.push(insertStatusToDb({
         messageId: value.id,
         recipientId: value.recipient_id || value.metadata?.recipient_id,
         status: value.status,
-        timestamp: req.body?.entry?.[0]?.changes?.[0]?.timestamp
-      });
+        timestamp: req.body?.entry?.[0]?.changes?.[0]?.timestamp || Math.floor(Date.now() / 1000)
+      }));
     }
 
-    // Process message statuses
-    for (const msg of messageStatuses) {
-      await insertStatusToDb({
-        messageId: msg.id,
-        recipientId: msg.from,
-        status: 'received',
-        timestamp: Math.floor(Date.now() / 1000)
-      });
+    if (promises.length === 0) {
+      console.log('No status updates to process');
+      return res.status(200).send('No status updates found');
     }
 
+    await Promise.all(promises);
+    console.log(`Successfully processed ${promises.length} status updates`);
     return res.status(200).send('Status updates processed successfully');
   } catch (error) {
     console.error('Error processing webhook:', error);
-    return res.status(200).send('Processed with errors');
+    return res.status(500).send('Error processing webhook'); //Improved error response
   }
 });
 

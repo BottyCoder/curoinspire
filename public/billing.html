@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,20 +18,20 @@
                 <span class="small-text">Excludes bank charges</span>
             </div>
         </div>
-        
+
         <div class="stats-grid">
             <!-- Total Messages -->
             <div class="stat-card">
                 <h2>Total Messages</h2>
                 <p id="total-messages">0</p>
             </div>
-            
+
             <!-- Billable Sessions -->
             <div class="stat-card">
                 <h2>Billable Sessions</h2>
                 <p id="billable-sessions">0</p>
             </div>
-            
+
             <!-- Monthly Active Users -->
             <div class="stat-card">
                 <h2>Monthly Active Users</h2>
@@ -60,7 +59,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- MAU Cost -->
             <div class="stat-card">
                 <h2>MAU Cost</h2>
@@ -69,7 +68,7 @@
                     <span class="currency-conversion">(R<span id="mau-cost-zar">0.00</span>)</span>
                 </p>
             </div>
-            
+
             <!-- Total Cost -->
             <div class="stat-card">
                 <h2>Total Cost</h2>
@@ -91,10 +90,13 @@
 
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            const sessionCost = document.querySelector('.text-2xl.font-semibold');
+            const sessionCost = document.querySelector('.cost-display'); //Corrected Selector
             const details = document.getElementById('session-details');
-            if (sessionCost && details && !sessionCost.contains(e.target) && !details.contains(e.target)) {
-                details.classList.add('hidden');
+
+            if (!sessionCost || !details) return;
+
+            if (!e.target.closest('.cost-display') && !e.target.closest('#session-details')) {
+                details.classList.remove('show');
             }
         });
 
@@ -118,28 +120,28 @@
 
                 const stats = await statsRes.json();
                 const { rate } = await rateRes.json();
-                
+
                 // Update exchange rate display
                 document.getElementById('exchange-rate').textContent = `1 USD = ${rate.toFixed(2)} ZAR`;
-                
+
                 // Update metrics
                 document.getElementById('total-messages').textContent = stats.totalMessages;
                 document.getElementById('billable-sessions').textContent = stats.billableSessions || 0;
                 document.getElementById('monthly-users').textContent = stats.monthlyActiveUsers || 0;
-                
+
                 // Update costs
                 document.getElementById('session-cost-usd').textContent = stats.sessionCost?.toFixed(2) || '0.00';
                 document.getElementById('session-cost-zar').textContent = ((stats.sessionCost || 0) * rate).toFixed(2);
-                
+
                 // Update carrier and utility details
                 document.getElementById('carrier-count').textContent = stats.carrierCount || 0;
                 document.getElementById('carrier-total').textContent = stats.carrierTotal?.toFixed(2) || '0.00';
                 document.getElementById('utility-count').textContent = stats.utilityCount || 0;
                 document.getElementById('utility-total').textContent = stats.utilityTotal?.toFixed(2) || '0.00';
-                
+
                 document.getElementById('mau-cost-usd').textContent = stats.mauCost?.toFixed(2) || '0.00';
                 document.getElementById('mau-cost-zar').textContent = ((stats.mauCost || 0) * rate).toFixed(2);
-                
+
                 document.getElementById('total-cost-usd').textContent = stats.totalCost?.toFixed(2) || '0.00';
                 document.getElementById('total-cost-zar').textContent = ((stats.totalCost || 0) * rate).toFixed(2);
             } catch (error) {
