@@ -1,0 +1,136 @@
+2025-04-06 14:21:00.95
+d34a692d
+User
+"accept-encoding": "gzip, deflate",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"content-type": "application/json",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"server-timing": "depproxy;dur=1743942060946, pid1req;dur=1743942060952",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"traceparent": "00-7353bdedb6415d952fa60790d38d2047-9a165c3676354a20-00",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"via": "1.1 google",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-cloud-trace-context": "7353bdedb6415d952fa60790d38d2047/11103163320309729824",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-forwarded-for": "13.234.17.172, 34.111.179.208, 35.191.41.16,35.193.50.36",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-forwarded-host": "inspire.botforce.co.za",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-forwarded-proto": "https",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-replit-user-bio": "",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-replit-user-id": "",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-replit-user-name": "",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-replit-user-profile-image": "",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-replit-user-roles": "",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-replit-user-teams": "",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"x-replit-user-url": ""
+2025-04-06 14:21:00.95
+d34a692d
+User
+}
+2025-04-06 14:21:00.95
+d34a692d
+User
+Body: {
+2025-04-06 14:21:00.95
+d34a692d
+User
+"object": "whatsapp_business_account",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"entry": [
+2025-04-06 14:21:00.95
+d34a692d
+User
+{
+2025-04-06 14:21:00.95
+d34a692d
+User
+"id": "534770752614324",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"changes": [
+2025-04-06 14:21:00.95
+d34a692d
+User
+{
+2025-04-06 14:21:00.95
+d34a692d
+User
+"value": {
+2025-04-06 14:21:00.95
+d34a692d
+User
+"messaging_product": "whatsapp",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"metadata": {
+2025-04-06 14:21:00.95
+d34a692d
+User
+"display_phone_number": "27824937050",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"phone_number_id": "600387479826193"
+2025-04-06 14:21:00.95
+d34a692d
+User
+},
+2025-04-06 14:21:00.95
+d34a692d
+User
+"statuses": [
+2025-04-06 14:21:00.95
+d34a692d
+User
+{
+2025-04-06 14:21:00.95
+d34a692d
+User
+"id": "wamid.HBgLMjc4MjQ1MzcxMjUVAgARGBJBMUY3NEU5OUUyQzVGMTkxNTIA",
+2025-04-06 14:21:00.95
+d34a692d
+User
+"status": "delivered",
