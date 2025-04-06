@@ -34,7 +34,15 @@ const insertStatusToDb = async (statusDetails) => {
       .insert([newStatusRecord])
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error details:', {
+        error,
+        attemptedRecord: newStatusRecord,
+        messageId: statusDetails.messageId,
+        status: statusDetails.status
+      });
+      throw error;
+    }
 
     console.log('Successfully inserted status:', {
       wamid: messageId,
@@ -70,7 +78,12 @@ router.get('/', (req, res) => {
 router.post('/', async (req, res) => {
   console.log("=== INCOMING WHATSAPP STATUS WEBHOOK ===");
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
-  console.log("Body:", JSON.stringify(req.body, null, 2));
+  console.log("Raw Body:", JSON.stringify(req.body, null, 2));
+  
+  const updates = req.body?.entry?.[0]?.changes?.[0]?.value;
+  console.log("Parsed Updates:", JSON.stringify(updates, null, 2));
+  console.log("Status Updates:", JSON.stringify(updates?.statuses, null, 2));
+  console.log("Message Updates:", JSON.stringify(updates?.messages, null, 2));
 
   try {
     console.log('Full webhook payload:', JSON.stringify(req.body, null, 2));
