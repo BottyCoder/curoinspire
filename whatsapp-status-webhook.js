@@ -12,6 +12,7 @@ router.use(express.json());
 const insertStatusToDb = async (statusDetails) => {
   const environment = process.env.NODE_ENV || 'development';
   console.log(`Processing status update in ${environment} environment`);
+  console.log('Status details:', JSON.stringify(statusDetails, null, 2));
 
   try {
     const { messageId, recipientId, status, timestamp, errorDetails, clientGuid } = statusDetails;
