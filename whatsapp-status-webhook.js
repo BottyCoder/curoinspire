@@ -8,7 +8,6 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 // Middleware to parse incoming JSON data
 router.use(express.json());
 
-// Function to insert status into the database
 // Function to insert or update the status in the database
 const insertStatusToDb = async (statusDetails) => {
   const environment = process.env.NODE_ENV || 'development';
@@ -49,6 +48,48 @@ const insertStatusToDb = async (statusDetails) => {
       }]);
 
     if (billingError) throw billingError;
+
+    // Convert Unix timestamp to ISO format for message timestamp
+    const messageTimestamp = new Date(timestamp * 1000).toISOString();
+
+    // Use current time for status update timestamp
+    const currentTimestamp = new Date().toISOString();
+
+    // Create new status record with available data
+    const newStatusRecord = {
+      original_wamid: messageId, // Store raw WAMID from webhook
+      mobile_number: recipientId,
+      channel: "whatsapp", 
+      status: status,
+      timestamp: messageTimestamp,        // Original message timestamp
+      status_timestamp: currentTimestamp, // When we received the status
+      error_code: errorDetails ? errorDetails.code : null,
+      error_message: errorDetails ? errorDetails.message : null
+    };
+
+    // Insert status into the database with the original wamid
+    const { data, error: insertError } = await supabase
+      .from("messages_log")
+      .insert([newStatusRecord])
+      .select();
+
+    if (insertError) {
+      console.error('Database insertion error:', insertError);
+      console.error('Failed record:', newStatusRecord);
+      throw new Error(`Error inserting status: ${insertError.message}`);
+    }
+
+    // Log successful insertion with timestamp
+    console.log(`[${new Date().toISOString()}] Successfully inserted status:`, {
+      wamid: messageId,
+      status,
+      recipientId
+    });
+  } catch (err) {
+    console.error(`Error inserting status: ${err.message}`);
+  }
+};
+
 
 // Function to handle location messages
 const handleLocationMessage = async (locationData) => {
@@ -105,43 +146,6 @@ const handleLocationMessage = async (locationData) => {
   }
 };
 
-    // Convert Unix timestamp to ISO format for message timestamp
-    const messageTimestamp = new Date(timestamp * 1000).toISOString();
-    
-    // Use current time for status update timestamp
-    const currentTimestamp = new Date().toISOString();
-
-    // Create new status record with available data
-    const newStatusRecord = {
-      original_wamid: messageId, // Store raw WAMID from webhook
-      mobile_number: recipientId,
-      channel: "whatsapp", 
-      status: status,
-      timestamp: messageTimestamp,        // Original message timestamp
-      status_timestamp: currentTimestamp, // When we received the status
-      error_code: errorDetails ? errorDetails.code : null,
-      error_message: errorDetails ? errorDetails.message : null
-    };
-
-    // Insert new record
-    const { data, error: insertError } = await supabase
-      .from("messages_log")
-      .insert([newStatusRecord])
-      .select();
-
-    if (insertError) {
-      console.error('Database insertion error:', insertError);
-      throw new Error(`Error inserting status: ${insertError.message}`);
-    }
-
-    console.log('Inserted record:', data);
-    console.log(`Successfully inserted new status record for message ID: ${messageId}`);
-  } catch (err) {
-    console.error(`Error inserting status: ${err.message}`);
-  }
-};
-
-
 // Define the POST route for the webhook
 router.post('/', async (req, res) => {
   console.log("=== INCOMING WHATSAPP WEBHOOK ===");
@@ -154,7 +158,7 @@ router.post('/', async (req, res) => {
     const message = req.body.entry[0].changes[0].value.messages[0];
     const text = message.text.body;
     const from = message.from;
-    
+
     try {
       // Get tracking code from database
       const { data: trackingData } = await supabase
@@ -182,9 +186,9 @@ router.post('/', async (req, res) => {
     const location = req.body.entry[0].changes[0].value.messages[0].location;
     const messageId = req.body.entry[0].changes[0].value.messages[0].id;
     const recipientId = req.body.entry[0].changes[0].value.messages[0].from;
-    
+
     console.log("Received location:", location);
-    
+
     await handleLocationMessage({
       messageId,
       recipientId,

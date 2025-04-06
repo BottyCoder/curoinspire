@@ -40,14 +40,21 @@ router.get('/exchange-rate', checkAuth, async (req, res) => {
 
 router.get('/stats', checkAuth, async (req, res) => {
   try {
-    const now = moment();
+    const now = moment().tz('Africa/Johannesburg');
     const startOfMonth = now.clone().startOf('month');
 
-    // Include message_month in the query
+    // Include message_month in query with proper timezone handling
     const { data: billingRecords, error: queryError } = await supabase
       .from('billing_records')
       .select('*')
-      .gte('message_timestamp', startOfMonth.toISOString());
+      .gte('message_timestamp', startOfMonth.format());
+
+    // Log query time info
+    console.log('Query Time Info:', {
+      currentTime: now.format(),
+      startOfMonth: startOfMonth.format(),
+      timezone: now.tz()
+    });
 
     console.log('Full billing records:', JSON.stringify(billingRecords, null, 2));
     console.log('Query conditions:', {
