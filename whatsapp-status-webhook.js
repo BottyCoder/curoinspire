@@ -279,15 +279,9 @@ router.post('/', async (req, res) => {
     return res.status(400).send('Invalid data structure');
   }
 
-  try {
-    // Send response only after processing is complete
-    await Promise.all(promises);
-    console.log('Successfully processed all status updates');
-    res.status(200).send('Webhook processed successfully');
-  } catch (error) {
-    console.error('Failed to process webhook:', error);
-    res.status(500).send('Error processing webhook');
-  }
+  // Send a 200 OK response after processing
+  console.log('Successfully processed webhook request');
+  res.status(200).send('Webhook processed successfully');
 });
 
 // Export the router for use in server.js
