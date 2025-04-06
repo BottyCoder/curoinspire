@@ -49,6 +49,24 @@ const insertStatusToDb = async (statusDetails) => {
   }
 };
 
+// WhatsApp verification handler
+router.get('/', (req, res) => {
+  console.log("=== INCOMING WHATSAPP VERIFICATION REQUEST ===");
+  console.log("Query params:", req.query);
+  
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+    console.log("Webhook verified successfully");
+    res.status(200).send(challenge);
+  } else {
+    console.error("Failed webhook verification");
+    res.sendStatus(403);
+  }
+});
+
 router.post('/', async (req, res) => {
   console.log("=== INCOMING WHATSAPP STATUS WEBHOOK ===");
   console.log("Headers:", JSON.stringify(req.headers, null, 2));
