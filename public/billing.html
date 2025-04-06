@@ -84,14 +84,16 @@
     <script>
         function toggleSessionDetails() {
             const details = document.getElementById('session-details');
-            details.classList.toggle('show');
+            if (details) {
+                details.classList.toggle('show');
+            }
         }
 
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
             const sessionCost = document.querySelector('.text-2xl.font-semibold');
             const details = document.getElementById('session-details');
-            if (!sessionCost.contains(e.target) && !details.contains(e.target)) {
+            if (sessionCost && details && !sessionCost.contains(e.target) && !details.contains(e.target)) {
                 details.classList.add('hidden');
             }
         });

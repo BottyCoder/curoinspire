@@ -385,6 +385,28 @@ process.on('SIGINT', () => {
     process.exit(0);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n✅ Server running on port ${PORT} in ${NODE_ENV} mode`);
+});
+
+// Graceful shutdown
+function shutdown() {
+    console.log('Shutting down gracefully...');
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+    
+    // Force close after 10s
+    setTimeout(() => {
+        console.error('Could not close connections in time, forcefully shutting down');
+        process.exit(1);
+    }, 10000);
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    shutdown();
 });
