@@ -76,18 +76,33 @@ const insertStatusToDb = async (statusDetails) => {
     console.log('Created status record:', newStatusRecord);
 
     // Insert status directly without clientGuid
-    console.log('Attempting to insert status record:', newStatusRecord);
+    console.log('Attempting to insert status record:', JSON.stringify(newStatusRecord, null, 2));
     
-    const { data, error: insertError } = await supabase
-      .from("messages_log")
-      .insert([newStatusRecord]);
+    try {
+      const { data, error: insertError } = await supabase
+        .from("messages_log")
+        .insert([newStatusRecord])
+        .select();
 
-    if (insertError) {
-      console.error('Database insertion error:', insertError);
-      console.error('Failed record:', newStatusRecord);
-      throw new Error(`Error inserting status: ${insertError.message}`);
-    } else {
-      console.log('Successfully inserted status record with wamid:', messageId);
+      if (insertError) {
+        console.error('Database insertion error:', insertError);
+        console.error('Failed record:', JSON.stringify(newStatusRecord, null, 2));
+        console.error('Supabase URL:', process.env.SUPABASE_URL);
+        console.error('Using service role key:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+        throw new Error(`Error inserting status: ${insertError.message}`);
+      }
+
+      console.log('Successfully inserted status record:', {
+        wamid: messageId,
+        data: data,
+        timestamp: new Date().toISOString()
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Critical error during status insert:', error);
+      console.error('Status payload:', JSON.stringify(newStatusRecord, null, 2));
+      throw error; // Re-throw to trigger proper error handling
     }
 
     // Log successful insertion with timestamp
@@ -264,8 +279,15 @@ router.post('/', async (req, res) => {
     return res.status(400).send('Invalid data structure');
   }
 
-  // Send a 200 OK response to acknowledge receipt of the webhook
-  res.status(200).send('Webhook received');
+  try {
+    // Send response only after processing is complete
+    await Promise.all(promises);
+    console.log('Successfully processed all status updates');
+    res.status(200).send('Webhook processed successfully');
+  } catch (error) {
+    console.error('Failed to process webhook:', error);
+    res.status(500).send('Error processing webhook');
+  }
 });
 
 // Export the router for use in server.js
