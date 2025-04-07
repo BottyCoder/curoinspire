@@ -24,13 +24,27 @@ const insertStatusToDb = async (statusDetails) => {
     const messageTimeDate = new Date(messageTime);
     const sessionCutoff = new Date(messageTimeDate.getTime() - (sessionWindowMinutes * 60 * 1000));
     
+    console.log('Processing message:', {
+      number: recipientId,
+      messageTime: messageTimeDate.toISOString(),
+      sessionCutoff: sessionCutoff.toISOString()
+    });
+
     const { data: lastSession } = await supabase
       .from("billing_records")
       .select("*")
       .eq("mobile_number", recipientId)
-      .gte("session_start_time", sessionCutoff.toISOString())
-      .order("session_start_time", { ascending: false })
+      .gte("message_timestamp", sessionCutoff.toISOString()) // Changed to message_timestamp
+      .order("message_timestamp", { ascending: false })
       .limit(1);
+
+    if (lastSession?.[0]) {
+      console.log('Found existing session:', {
+        number: recipientId,
+        lastMessageTime: lastSession[0].message_timestamp,
+        withinWindow: true
+      });
+    }
 
     console.log('Session window check:', {
       messageTime: messageTimeDate.toISOString(),
