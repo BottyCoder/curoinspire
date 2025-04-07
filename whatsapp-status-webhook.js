@@ -19,6 +19,36 @@ const insertStatusToDb = async (statusDetails) => {
     const messageTime = new Date(timestamp * 1000);
     const currentTimestamp = new Date().toISOString();
 
+    // First check if billing record already exists for this message
+    const { data: existingBilling } = await supabase
+      .from("billing_records")
+      .select("id")
+      .eq("whatsapp_message_id", messageId)
+      .single();
+
+    if (!existingBilling) {
+      const billingRecord = {
+        whatsapp_message_id: messageId,
+        mobile_number: recipientId,
+        message_timestamp: messageTime.toISOString(),
+        session_start_time: messageTime.toISOString(),
+        cost_utility: 0.0076,
+        cost_carrier: 0.0100,
+        cost_mau: 0.0000,
+        total_cost: 0.0176,
+        is_mau_charged: false,
+        message_month: messageTime.toISOString().substring(0, 10)
+      };
+
+      const { error: billingError } = await supabase
+        .from("billing_records")
+        .insert([billingRecord]);
+
+      if (billingError) {
+        console.error('Failed to insert billing record:', billingError);
+      }
+    }
+
     const newStatusRecord = {
       original_wamid: messageId,
       mobile_number: recipientId,
