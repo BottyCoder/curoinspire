@@ -1,0 +1,148 @@
+025-04-07 11:23:05.15
+9542cdc6
+User
+"statuses": [
+2025-04-07 11:23:05.15
+9542cdc6
+User
+{
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"id": "wamid.HBgLMjc3MTk2ODg3NTUVAgARGBJFMzkzNkQyNEJCQThEQkYzRTMA",
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"status": "read",
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"timestamp": "1744017783",
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"recipient_id": "27719688755"
+2025-04-07 11:23:05.15
+9542cdc6
+User
+}
+2025-04-07 11:23:05.15
+9542cdc6
+User
+]
+2025-04-07 11:23:05.15
+9542cdc6
+User
+},
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"field": "messages"
+2025-04-07 11:23:05.15
+9542cdc6
+User
+}
+2025-04-07 11:23:05.15
+9542cdc6
+User
+]
+2025-04-07 11:23:05.15
+9542cdc6
+User
+}
+2025-04-07 11:23:05.15
+9542cdc6
+User
+Changes: {
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"value": {
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"messaging_product": "whatsapp",
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"metadata": {
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"display_phone_number": "27824937050",
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"phone_number_id": "600387479826193"
+2025-04-07 11:23:05.15
+9542cdc6
+User
+},
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"statuses": [
+2025-04-07 11:23:05.15
+9542cdc6
+User
+{
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"id": "wamid.HBgLMjc3MTk2ODg3NTUVAgARGBJFMzkzNkQyNEJCQThEQkYzRTMA",
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"status": "read",
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"timestamp": "1744017783",
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"recipient_id": "27719688755"
+2025-04-07 11:23:05.15
+9542cdc6
+User
+}
+2025-04-07 11:23:05.15
+9542cdc6
+User
+]
+2025-04-07 11:23:05.15
+9542cdc6
+User
+},
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"field": "messages"
+2025-04-07 11:23:05.15
+9542cdc6
+User
+}
+2025-04-07 11:23:05.15
+9542cdc6
+User
+Value: {
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"messaging_product": "whatsapp",
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"metadata": {
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"display_phone_number": "27824937050",
+2025-04-07 11:23:05.15
+9542cdc6
+User
+"phone_number_id": "600387479826193"
+2025-04-07 11:23:05.15
+9542cdc6
+User
+},
