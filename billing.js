@@ -63,7 +63,13 @@ router.get('/stats', checkAuth, async (req, res) => {
     const { data: billingRecords, error: queryError } = await supabase
       .from('billing_records')
       .select('*')
-      .gte('message_timestamp', startOfMonth.format());
+      .gte('message_timestamp', startOfMonth.format())
+      .order('message_timestamp', { ascending: false });
+
+    console.log('Billing query params:', {
+      startTime: startOfMonth.format(),
+      records: billingRecords?.length || 0
+    });
 
     // // Log query time info
     // console.log('Query Time Info:', {
@@ -80,6 +86,10 @@ router.get('/stats', checkAuth, async (req, res) => {
 
     if (queryError) {
       console.error('Supabase query error:', queryError);
+      console.error('Query params:', {
+        startOfMonth: startOfMonth.format(),
+        timezone: now.tz()
+      });
       throw queryError;
     }
 
