@@ -19,14 +19,23 @@ const insertStatusToDb = async (statusDetails) => {
     const messageTime = new Date(timestamp * 1000);
     const currentTimestamp = new Date().toISOString();
 
-    // First check if billing record already exists for this message
-    const { data: existingBilling } = await supabase
+    // Get the last session for this number in the past 23h50m
+    const sessionWindowMinutes = 1430; // 23h50m
+    const sessionCutoff = new Date(messageTime.getTime() - (sessionWindowMinutes * 60 * 1000));
+    
+    const { data: lastSession } = await supabase
       .from("billing_records")
-      .select("id")
-      .eq("whatsapp_message_id", messageId)
-      .single();
+      .select("*")
+      .eq("mobile_number", recipientId)
+      .gte("session_start_time", sessionCutoff.toISOString())
+      .order("session_start_time", { ascending: false })
+      .limit(1);
 
-    if (!existingBilling) {
+    // If no session exists in window or message is first of month, create new session
+    const isFirstOfMonth = !lastSession?.[0] || 
+      new Date(lastSession[0].session_start_time).getMonth() !== messageTime.getMonth();
+
+    if (!lastSession?.[0] || isFirstOfMonth) {
       const billingRecord = {
         whatsapp_message_id: messageId,
         mobile_number: recipientId,
@@ -34,11 +43,17 @@ const insertStatusToDb = async (statusDetails) => {
         session_start_time: messageTime.toISOString(),
         cost_utility: 0.0076,
         cost_carrier: 0.0100,
-        cost_mau: 0.0000,
-        total_cost: 0.0176,
-        is_mau_charged: false,
-        message_month: messageTime.toISOString().substring(0, 10)
+        cost_mau: isFirstOfMonth ? 0.0600 : 0.0000,
+        total_cost: isFirstOfMonth ? 0.0776 : 0.0176,
+        is_mau_charged: isFirstOfMonth,
+        message_month: messageTime.toISOString().substring(0, 7) // YYYY-MM format
       };
+
+      console.log('Creating new billing record:', {
+        mobile: recipientId,
+        messageTime: messageTime.toISOString(),
+        isFirstOfMonth
+      });
 
       const { error: billingError } = await supabase
         .from("billing_records")
@@ -47,6 +62,11 @@ const insertStatusToDb = async (statusDetails) => {
       if (billingError) {
         console.error('Failed to insert billing record:', billingError);
       }
+    } else {
+      console.log('Message part of existing session:', {
+        mobile: recipientId,
+        sessionStart: lastSession[0].session_start_time
+      });
     }
 
     const newStatusRecord = {
