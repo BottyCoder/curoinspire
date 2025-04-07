@@ -38,6 +38,22 @@ router.get('/exchange-rate', checkAuth, async (req, res) => {
   }
 });
 
+router.get('/recent-sessions', checkAuth, async (req, res) => {
+  try {
+    const { data: recentSessions, error } = await supabase
+      .from('billing_records')
+      .select('message_timestamp, mobile_number, status, cost_utility, cost_carrier, cost_mau, total_cost, session_start_time')
+      .order('message_timestamp', { ascending: false })
+      .limit(10);
+
+    if (error) throw error;
+    res.json({ sessions: recentSessions });
+  } catch (error) {
+    console.error('Error fetching recent sessions:', error);
+    res.status(500).json({ error: 'Failed to fetch recent sessions' });
+  }
+});
+
 router.get('/stats', checkAuth, async (req, res) => {
   try {
     const now = moment().tz('Africa/Johannesburg');

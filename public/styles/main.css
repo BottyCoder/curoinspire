@@ -90,6 +90,34 @@ body {
   cursor: pointer;
 }
 
+.recent-sessions {
+  background-color: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+}
+
+.recent-sessions table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.recent-sessions th,
+.recent-sessions td {
+  border: 1px solid var(--border-color);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.recent-sessions th {
+  background-color: var(--bg-color);
+  font-weight: 600;
+}
+
+.recent-sessions tr:hover {
+  background-color: var(--bg-color);
+}
+
 .currency-conversion {
   color: var(--text-light);
   font-size: 1rem;
