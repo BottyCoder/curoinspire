@@ -21,7 +21,8 @@ const insertStatusToDb = async (statusDetails) => {
 
     // Get the last session for this number in the past 23h50m
     const sessionWindowMinutes = 1430; // 23h50m
-    const sessionCutoff = new Date(messageTime.getTime() - (sessionWindowMinutes * 60 * 1000));
+    const messageTimeDate = new Date(messageTime);
+    const sessionCutoff = new Date(messageTimeDate.getTime() - (sessionWindowMinutes * 60 * 1000));
     
     const { data: lastSession } = await supabase
       .from("billing_records")
@@ -31,9 +32,17 @@ const insertStatusToDb = async (statusDetails) => {
       .order("session_start_time", { ascending: false })
       .limit(1);
 
-    // If no session exists in window or message is first of month, create new session
+    console.log('Session window check:', {
+      messageTime: messageTimeDate.toISOString(),
+      cutoffTime: sessionCutoff.toISOString(),
+      lastSessionTime: lastSession?.[0]?.session_start_time,
+      hasValidSession: !!lastSession?.[0]
+    });
+
+    // Determine if this is first message of the month
     const isFirstOfMonth = !lastSession?.[0] || 
-      new Date(lastSession[0].session_start_time).getMonth() !== messageTime.getMonth();
+      new Date(lastSession[0].session_start_time).getMonth() !== messageTimeDate.getMonth() ||
+      new Date(lastSession[0].session_start_time).getFullYear() !== messageTimeDate.getFullYear();
 
     if (!lastSession?.[0] || isFirstOfMonth) {
       const billingRecord = {
