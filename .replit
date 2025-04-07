@@ -5,7 +5,7 @@ run = "npm run start"
 channel = "stable-23_11"
 
 [deployment]
-run = ["node", "server.js"]
+run = ["sh", "-c", "PORT=3000 NODE_ENV=production node server.js"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
