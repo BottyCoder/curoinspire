@@ -46,7 +46,7 @@ const insertStatusToDb = async (statusDetails) => {
         cost_mau: isFirstOfMonth ? 0.0600 : 0.0000,
         total_cost: isFirstOfMonth ? 0.0776 : 0.0176,
         is_mau_charged: isFirstOfMonth,
-        message_month: messageTime.toISOString().substring(0, 10) // YYYY-MM-DD format
+        message_month: `${messageTime.getFullYear()}-${String(messageTime.getMonth() + 1).padStart(2, '0')}-01` // First day of month
       };
 
       console.log('Creating new billing record:', {
