@@ -42,7 +42,7 @@ router.get('/recent-sessions', checkAuth, async (req, res) => {
   try {
     const { data: recentSessions, error } = await supabase
       .from('billing_records')
-      .select('message_timestamp, mobile_number, status, cost_utility, cost_carrier, cost_mau, total_cost, session_start_time')
+      .select('message_timestamp, mobile_number, whatsapp_message_id, cost_utility, cost_carrier, cost_mau, total_cost, session_start_time')
       .order('message_timestamp', { ascending: false })
       .limit(10);
 
