@@ -31,6 +31,12 @@ router.get('/stats', async (req, res) => {
 
     if (inspireError) throw inspireError;
 
+    // Calculate total messages correctly
+    const totalCustomerMessages = billingRecords.length;
+    const totalInspireMessages = inspireMessages ? inspireMessages.length : 0;
+    const totalMessages = totalCustomerMessages + totalInspireMessages;
+
+
     // Group messages by user and session
     const sessions = billingRecords.reduce((acc, record) => {
       const mobileNumber = record.mobile_number || record.recipient_number;
@@ -87,7 +93,7 @@ router.get('/stats', async (req, res) => {
         uniqueClients: [...new Set(inspireMessages.map(m => m.client_guid))].length
       },
       customer: {
-        count: billingRecords.length, 
+        count: billingRecords.length,
         uniqueNumbers: uniqueNumbers
       },
       billing: {
@@ -96,6 +102,7 @@ router.get('/stats', async (req, res) => {
         mauCost: uniqueNumbers * 0.06,
         totalCost: (billableSessions * 0.0176) + (uniqueNumbers * 0.06)
       },
+      totalMessages: totalMessages, // Added total messages
       startDate: startOfMonth.format(),
       endDate: now.format()
     });
