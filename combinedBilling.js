@@ -14,6 +14,15 @@ router.get('/stats', async (req, res) => {
     const now = moment().tz('Africa/Johannesburg');
     const startOfMonth = now.clone().startOf('month');
 
+    // Get billable records first since these are our source of truth
+    const { data: billingRecords, error: billingError } = await supabase
+      .from('billing_records')
+      .select('*')
+      .gte('message_timestamp', startOfMonth.format());
+
+    if (billingError) throw billingError;
+
+    // Get messages for additional stats
     const { data: messages, error: messagesError } = await supabase
       .from('messages_log')
       .select('*')
@@ -21,14 +30,13 @@ router.get('/stats', async (req, res) => {
 
     if (messagesError) throw messagesError;
 
-    // Separate messages by type - ensure non-null tracking codes only
+    // Filter inspire messages (has tracking code)
     const inspireMessages = messages.filter(msg => msg.tracking_code && msg.tracking_code.length > 0);
-    const customerMessages = messages.filter(msg => !msg.tracking_code || msg.tracking_code.length === 0);
 
     console.log('Message counts:', {
-      total: messages.length,
+      total: billingRecords.length,
       inspire: inspireMessages.length,
-      customer: customerMessages.length,
+      customer: billingRecords.length,
       period: {
         start: startOfMonth.format(),
         end: now.format()
@@ -99,11 +107,13 @@ router.get('/stats', async (req, res) => {
         uniqueClients: [...new Set(inspireMessages.map(m => m.client_guid))].length
       },
       customer: {
-        count: customerMessages.length,
+        count: billingRecords.length, 
         uniqueNumbers: uniqueNumbers
       },
       billing: {
         sessionCount: billableSessions,
+        sessionCost: billableSessions * 0.0176,
+        mauCost: uniqueNumbers * 0.06,
         totalCost: (billableSessions * 0.0176) + (uniqueNumbers * 0.06)
       },
       startDate: startOfMonth.format(),
