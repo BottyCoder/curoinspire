@@ -42,6 +42,8 @@ router.get('/stats', async (req, res) => {
         end: now.format()
       }
     });
+
+    const { data: billingRecords, error: billingError } = await supabase
       .from('billing_records')
       .select('*')
       .gte('message_timestamp', startOfMonth.format());
