@@ -21,9 +21,19 @@ router.get('/stats', async (req, res) => {
 
     if (messagesError) throw messagesError;
 
-    // Separate messages by type
-    const inspireMessages = messages.filter(msg => msg.tracking_code);
-    const customerMessages = messages.filter(msg => !msg.tracking_code);
+    // Separate messages by type - ensure non-null tracking codes only
+    const inspireMessages = messages.filter(msg => msg.tracking_code && msg.tracking_code.length > 0);
+    const customerMessages = messages.filter(msg => !msg.tracking_code || msg.tracking_code.length === 0);
+
+    console.log('Message counts:', {
+      total: messages.length,
+      inspire: inspireMessages.length,
+      customer: customerMessages.length,
+      period: {
+        start: startOfMonth.format(),
+        end: now.format()
+      }
+    });
 
     // Get billing records for cost calculation
     const { data: billingRecords, error: billingError } = await supabase
