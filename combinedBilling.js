@@ -13,7 +13,7 @@ router.get('/stats', async (req, res) => {
     const now = moment().tz('Africa/Johannesburg');
     const startOfMonth = now.clone().startOf('month');
 
-    // Get billable records first since these are our source of truth
+    // Get billable records as source of truth
     const { data: billingRecords, error: billingError } = await supabase
       .from('billing_records')
       .select('*')
@@ -21,16 +21,15 @@ router.get('/stats', async (req, res) => {
 
     if (billingError) throw billingError;
 
-    // Get messages for additional stats
-    const { data: messages, error: messagesError } = await supabase
+    // Filter inspire messages from billing records with tracking codes from messages_log
+    const { data: inspireMessages, error: inspireError } = await supabase
       .from('messages_log')
       .select('*')
-      .gte('timestamp', startOfMonth.format());
+      .gte('timestamp', startOfMonth.format())
+      .not('tracking_code', 'is', null)
+      .not('tracking_code', 'eq', '');
 
-    if (messagesError) throw messagesError;
-
-    // Filter inspire messages (has tracking code)
-    const inspireMessages = messages.filter(msg => msg.tracking_code && msg.tracking_code.length > 0);
+    if (inspireError) throw inspireError;
 
     // Group messages by user and session
     const sessions = billingRecords.reduce((acc, record) => {
