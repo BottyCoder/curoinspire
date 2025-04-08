@@ -42,9 +42,6 @@ router.get('/stats', async (req, res) => {
         end: now.format()
       }
     });
-
-    // Get billing records for cost calculation
-    const { data: billingRecords, error: billingError } = await supabase
       .from('billing_records')
       .select('*')
       .gte('message_timestamp', startOfMonth.format());
