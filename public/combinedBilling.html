@@ -33,11 +33,36 @@
                 <p class="subtitle">Unique Numbers: <span id="customer-numbers">0</span></p>
             </div>
 
-            <!-- Billing Summary -->
+            <!-- Session Cost -->
             <div class="stat-card">
-                <h2>Billing Summary</h2>
-                <p>Sessions: <span id="session-count">0</span></p>
-                <p>Total Cost: $<span id="total-cost">0.00</span></p>
+                <h2>Session Cost</h2>
+                <p class="cost-display" onclick="toggleSessionDetails()">
+                    $<span id="session-cost-usd">0.00</span>
+                    <span class="currency-conversion">(R<span id="session-cost-zar">0.00</span>)</span>
+                    <span class="dropdown-arrow">▼</span>
+                </p>
+                <div id="session-details" class="dropdown-content">
+                    <div class="fee-section">
+                        <h3>Session Details</h3>
+                        <p>Count: <span id="session-count">0</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Messages Cost -->
+            <div class="stat-card">
+                <h2>Total Messages Cost</h2>
+                <p class="cost-display">
+                    $<span id="total-cost-usd">0.00</span>
+                    <span class="currency-conversion">(R<span id="total-cost-zar">0.00</span>)</span>
+                </p>
+            </div>
+
+            <!-- Exchange Rate -->
+            <div class="stat-card">
+                <h2>Exchange Rate</h2>
+                <p id="exchange-rate">1 USD = -- ZAR</p>
+                <p class="small-text">Excludes bank charges</p>
             </div>
         </div>
 
@@ -78,6 +103,26 @@
     </div>
 
     <script>
+        let exchangeRate = 19.08; // Default rate
+
+        async function fetchExchangeRate() {
+            try {
+                const response = await fetch('/billing/exchange-rate');
+                const data = await response.json();
+                exchangeRate = data.rate;
+                document.getElementById('exchange-rate').textContent = `1 USD = ${exchangeRate.toFixed(2)} ZAR`;
+            } catch (error) {
+                console.error('Error fetching exchange rate:', error);
+            }
+        }
+
+        function toggleSessionDetails() {
+            const details = document.getElementById('session-details');
+            if (details) {
+                details.classList.toggle('show');
+            }
+        }
+
         async function fetchStats() {
             try {
                 const response = await fetch('/combined/stats');
@@ -88,7 +133,18 @@
                 document.getElementById('customer-count').textContent = data.customer.count;
                 document.getElementById('customer-numbers').textContent = data.customer.uniqueNumbers;
                 document.getElementById('session-count').textContent = data.billing.sessionCount;
-                document.getElementById('total-cost').textContent = data.billing.totalCost.toFixed(2);
+                
+                const sessionCost = data.billing.sessionCount * 0.0176; // $0.0176 per session
+                const totalCost = data.billing.totalCost;
+
+                // Update USD amounts
+                document.getElementById('session-cost-usd').textContent = sessionCost.toFixed(2);
+                document.getElementById('total-cost-usd').textContent = totalCost.toFixed(2);
+
+                // Update ZAR amounts
+                document.getElementById('session-cost-zar').textContent = (sessionCost * exchangeRate).toFixed(2);
+                document.getElementById('total-cost-zar').textContent = (totalCost * exchangeRate).toFixed(2);
+
                 document.getElementById('current-period').textContent = 
                     `${new Date(data.startDate).toLocaleDateString()} - ${new Date(data.endDate).toLocaleDateString()}`;
             } catch (error) {
@@ -137,8 +193,10 @@
         }
 
         // Initial load
-        fetchStats();
-        fetchMessages();
+        fetchExchangeRate().then(() => {
+            fetchStats();
+            fetchMessages();
+        });
 
         // Refresh every 5 minutes
         setInterval(() => {
