@@ -31,11 +31,14 @@ router.get('/stats', async (req, res) => {
 
     if (inspireError) throw inspireError;
 
-    // Calculate total messages correctly
-    const totalCustomerMessages = billingRecords.length;
-    const totalInspireMessages = inspireMessages ? inspireMessages.length : 0;
-    const totalMessages = totalCustomerMessages + totalInspireMessages;
-
+    // Count customer messages properly
+    const customerMessagesCount = billingRecords.length;
+    
+    // Count inspire messages that have valid tracking codes
+    const inspireMessagesCount = inspireMessages ? inspireMessages.filter(m => m.tracking_code).length : 0;
+    
+    // Total messages is the combination of both
+    const totalMessages = customerMessagesCount + inspireMessagesCount;
 
     // Group messages by user and session
     const sessions = billingRecords.reduce((acc, record) => {
