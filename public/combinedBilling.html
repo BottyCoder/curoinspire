@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combined Billing Dashboard</title>
+    <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>Combined Billing Dashboard</h1>
+            <div id="billing-period">
+                Period: <span id="current-period">Loading...</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <!-- Inspire Messages -->
+            <div class="stat-card">
+                <h2>Inspire Messages</h2>
+                <p id="inspire-count">0</p>
+                <p class="subtitle">Unique Clients: <span id="inspire-clients">0</span></p>
+            </div>
+
+            <!-- Customer Messages -->
+            <div class="stat-card">
+                <h2>Customer Messages</h2>
+                <p id="customer-count">0</p>
+                <p class="subtitle">Unique Numbers: <span id="customer-numbers">0</span></p>
+            </div>
+
+            <!-- Billing Summary -->
+            <div class="stat-card">
+                <h2>Billing Summary</h2>
+                <p>Sessions: <span id="session-count">0</span></p>
+                <p>Total Cost: $<span id="total-cost">0.00</span></p>
+            </div>
+        </div>
+
+        <div class="messages-section">
+            <div class="tab-container">
+                <button class="tab-button active" onclick="showTab('inspire')">Inspire Messages</button>
+                <button class="tab-button" onclick="showTab('customer')">Customer Messages</button>
+            </div>
+
+            <div id="inspire-tab" class="tab-content active">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Client GUID</th>
+                            <th>Tracking Code</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inspire-messages"></tbody>
+                </table>
+            </div>
+
+            <div id="customer-tab" class="tab-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Mobile Number</th>
+                            <th>Message Type</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customer-messages"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchStats() {
+            try {
+                const response = await fetch('/combined/stats');
+                const data = await response.json();
+
+                document.getElementById('inspire-count').textContent = data.inspire.count;
+                document.getElementById('inspire-clients').textContent = data.inspire.uniqueClients;
+                document.getElementById('customer-count').textContent = data.customer.count;
+                document.getElementById('customer-numbers').textContent = data.customer.uniqueNumbers;
+                document.getElementById('session-count').textContent = data.billing.sessionCount;
+                document.getElementById('total-cost').textContent = data.billing.totalCost.toFixed(2);
+                document.getElementById('current-period').textContent = 
+                    `${new Date(data.startDate).toLocaleDateString()} - ${new Date(data.endDate).toLocaleDateString()}`;
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        async function fetchMessages() {
+            try {
+                const response = await fetch('/combined/recent-messages');
+                const data = await response.json();
+
+                const inspireMessages = data.messages.filter(msg => msg.tracking_code);
+                const customerMessages = data.messages.filter(msg => !msg.tracking_code);
+
+                document.getElementById('inspire-messages').innerHTML = inspireMessages
+                    .map(msg => `
+                        <tr>
+                            <td>${new Date(msg.timestamp).toLocaleString()}</td>
+                            <td>${msg.client_guid || '-'}</td>
+                            <td>${msg.tracking_code}</td>
+                            <td>${msg.status}</td>
+                        </tr>
+                    `).join('');
+
+                document.getElementById('customer-messages').innerHTML = customerMessages
+                    .map(msg => `
+                        <tr>
+                            <td>${new Date(msg.timestamp).toLocaleString()}</td>
+                            <td>${msg.mobile_number}</td>
+                            <td>${msg.message_type || 'standard'}</td>
+                            <td>${msg.status}</td>
+                        </tr>
+                    `).join('');
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+            }
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`button[onclick="showTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // Initial load
+        fetchStats();
+        fetchMessages();
+
+        // Refresh every 5 minutes
+        setInterval(() => {
+            fetchStats();
+            fetchMessages();
+        }, 300000);
+    </script>
+
+    <style>
+        .tab-container {
+            margin: 20px 0;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            border: none;
+            background: #f0f0f0;
+            cursor: pointer;
+        }
+        .tab-button.active {
+            background: #007bff;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .subtitle {
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</body>
+</html>
