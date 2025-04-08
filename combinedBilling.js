@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const moment = require('moment-timezone');
@@ -32,23 +31,6 @@ router.get('/stats', async (req, res) => {
 
     // Filter inspire messages (has tracking code)
     const inspireMessages = messages.filter(msg => msg.tracking_code && msg.tracking_code.length > 0);
-
-    console.log('Message counts:', {
-      total: billingRecords.length,
-      inspire: inspireMessages.length,
-      customer: billingRecords.length,
-      period: {
-        start: startOfMonth.format(),
-        end: now.format()
-      }
-    });
-
-    const { data: billingRecords, error: billingError } = await supabase
-      .from('billing_records')
-      .select('*')
-      .gte('message_timestamp', startOfMonth.format());
-
-    if (billingError) throw billingError;
 
     // Group messages by user and session
     const sessions = billingRecords.reduce((acc, record) => {
