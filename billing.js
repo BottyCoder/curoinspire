@@ -34,7 +34,7 @@ router.get('/exchange-rate', checkAuth, async (req, res) => {
     res.json({ rate: response.data.rates.ZAR });
   } catch (error) {
     console.error('Exchange rate error:', error);
-    res.json({ rate: 19.08 });
+    res.json({ rate: 20.00 }); // Fallback rate if API fails
   }
 });
 
