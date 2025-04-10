@@ -194,7 +194,7 @@
             try {
                 const response = await fetch('/billing/recent-sessions');
                 const data = await response.json();
-                
+
                 const tbody = document.getElementById('recent-sessions');
                 if (!data.sessions || data.sessions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" class="p-2 text-center">No recent sessions found</td></tr>';
