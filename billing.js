@@ -59,15 +59,28 @@ router.get('/stats', checkAuth, async (req, res) => {
     const now = moment().tz('Africa/Johannesburg');
     const startOfMonth = now.clone().startOf('month');
 
-    // Get all billing records for current month with larger limit
-    const { data: billingRecords, error: queryError } = await supabase
-      .from('billing_records')
-      .select('*')
-      .gte('message_timestamp', startOfMonth.format())
-      .order('message_timestamp', { ascending: false })
-      .limit(100000); // Increased limit to handle larger datasets
+    // Get all billing records for current month using pagination
+    let allBillingRecords = [];
+    let page = 0;
+    const pageSize = 1000;
+    
+    while (true) {
+      const { data: pageRecords, error: queryError } = await supabase
+        .from('billing_records')
+        .select('*')
+        .gte('message_timestamp', startOfMonth.format())
+        .order('message_timestamp', { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
 
-    if (queryError) throw queryError;
+      if (queryError) throw queryError;
+      if (!pageRecords || pageRecords.length === 0) break;
+      
+      allBillingRecords = [...allBillingRecords, ...pageRecords];
+      if (pageRecords.length < pageSize) break;
+      page++;
+    }
+
+    const billingRecords = allBillingRecords;
     
     console.log('Billing query params:', {
       startTime: startOfMonth.format(),
