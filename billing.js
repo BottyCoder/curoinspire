@@ -59,12 +59,13 @@ router.get('/stats', checkAuth, async (req, res) => {
     const now = moment().tz('Africa/Johannesburg');
     const startOfMonth = now.clone().startOf('month');
 
-    // Get all billing records for current month
+    // Get all billing records for current month with larger limit
     const { data: billingRecords, error: queryError } = await supabase
       .from('billing_records')
       .select('*')
       .gte('message_timestamp', startOfMonth.format())
-      .order('message_timestamp', { ascending: false });
+      .order('message_timestamp', { ascending: false })
+      .limit(100000); // Increased limit to handle larger datasets
 
     if (queryError) throw queryError;
     
