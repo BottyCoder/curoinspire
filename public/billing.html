@@ -139,37 +139,28 @@
 
         async function fetchData() {
             document.getElementById('current-period').textContent = formatBillingPeriod();
-            
-            try {
-                const [statsRes, rateRes] = await Promise.all([
+            const now = Date.now();
+
+            // Fetch fresh exchange rate and stats every hour
+            if (now - lastFetchTime >= HOUR_IN_MS || !cachedStats || !cachedRate) {
+                const [statsResponse, rateResponse] = await Promise.all([
                     fetch('/billing/stats'),
                     fetch('/billing/exchange-rate')
                 ]);
 
-                if (!statsRes.ok || !rateRes.ok) {
-                    throw new Error('Failed to fetch data');
-                }
+                const [statsData, rateData] = await Promise.all([
+                    statsResponse.json(),
+                    rateResponse.json()
+                ]);
 
-                const stats = await statsRes.json();
-                const rateData = await rateRes.json();
-                const rate = rateData.rate;
-                
-                // Update exchange rate display
-                document.getElementById('exchange-rate').textContent = `1 USD = ${rate.toFixed(2)} ZAR`;
+                cachedStats = statsData;
+                cachedRate = rateData.rate;
+                lastFetchTime = now;
 
-                // Update metrics
-                document.getElementById('total-messages').textContent = stats.totalMessages || 0;
-                document.getElementById('billable-sessions').textContent = stats.billableSessions || 0;
-                document.getElementById('monthly-users').textContent = stats.monthlyActiveUsers || 0;
-
-                // Update costs
-                document.getElementById('session-cost-usd').textContent = stats.sessionCost?.toFixed(2) || '0.00';
-                document.getElementById('session-cost-zar').textContent = ((stats.sessionCost || 0) * rate).toFixed(2);
-                document.getElementById('mau-cost-usd').textContent = stats.mauCost?.toFixed(2) || '0.00';
-                document.getElementById('mau-cost-zar').textContent = ((stats.mauCost || 0) * rate).toFixed(2);
-                document.getElementById('total-cost-usd').textContent = stats.totalCost?.toFixed(2) || '0.00';
-                document.getElementById('total-cost-zar').textContent = ((stats.totalCost || 0) * rate).toFixed(2);
-                document.getElementById('session-cost-zar').textContent = ((cachedStats.sessionCost || 0) * cachedRate).toFixed(2);
+                document.getElementById('exchange-rate').textContent = `1 USD = ${cachedRate.toFixed(2)} ZAR`;
+                document.getElementById('total-messages').textContent = statsData.totalMessages;
+                document.getElementById('billable-sessions').textContent = statsData.billableSessions;
+                document.getElementById('monthly-users').textContent = statsData.monthlyActiveUsers;
 
                 // Update carrier and utility details
                 document.getElementById('carrier-count').textContent = cachedStats.carrierCount || 0;
@@ -177,13 +168,22 @@
                 document.getElementById('utility-count').textContent = cachedStats.utilityCount || 0;
                 document.getElementById('utility-total').textContent = cachedStats.utilityTotal?.toFixed(2) || '0.00';
 
-                document.getElementById('mau-cost-usd').textContent = cachedStats.mauCost?.toFixed(2) || '0.00';
-                document.getElementById('mau-cost-zar').textContent = ((cachedStats.mauCost || 0) * cachedRate).toFixed(2);
+                document.getElementById('session-cost-zar').textContent = ((cachedStats.sessionCost || 0) * cachedRate).toFixed(2);
 
-                document.getElementById('total-cost-usd').textContent = cachedStats.totalCost?.toFixed(2) || '0.00';
+
+                // Update costs
+                document.getElementById('session-cost-usd').textContent = statsData.sessionCost?.toFixed(2) || '0.00';
+                document.getElementById('mau-cost-usd').textContent = statsData.mauCost?.toFixed(2) || '0.00';
+                document.getElementById('total-cost-usd').textContent = statsData.totalCost?.toFixed(2) || '0.00';
+                document.getElementById('mau-cost-zar').textContent = ((statsData.mauCost || 0) * cachedRate).toFixed(2);
+                document.getElementById('total-cost-zar').textContent = ((statsData.totalCost || 0) * cachedRate).toFixed(2);
+
+
+            } else {
+                // Use cached data if it's within the hour
+                document.getElementById('session-cost-zar').textContent = ((cachedStats.sessionCost || 0) * cachedRate).toFixed(2);
+                document.getElementById('mau-cost-zar').textContent = ((cachedStats.mauCost || 0) * cachedRate).toFixed(2);
                 document.getElementById('total-cost-zar').textContent = ((cachedStats.totalCost || 0) * cachedRate).toFixed(2);
-            } catch (error) {
-                console.error('Error fetching data:', error);
             }
         }
 
