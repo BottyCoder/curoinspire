@@ -161,9 +161,12 @@
                 document.getElementById('total-messages').textContent = statsData.totalMessages;
                 document.getElementById('billable-sessions').textContent = statsData.billableSessions;
                 document.getElementById('monthly-users').textContent = statsData.monthlyActiveUsers;
-
+                
                 // Update carrier and utility details
-                document.getElementById('carrier-count').textContent = cachedStats.carrierCount || 0;
+                document.getElementById('carrier-count').textContent = statsData.carrierCount || 0;
+                document.getElementById('carrier-total').textContent = (statsData.carrierTotal || 0).toFixed(2);
+                document.getElementById('utility-count').textContent = statsData.utilityCount || 0;
+                document.getElementById('utility-total').textContent = (statsData.utilityTotal || 0).toFixed(2);
                 document.getElementById('carrier-total').textContent = cachedStats.carrierTotal?.toFixed(2) || '0.00';
                 document.getElementById('utility-count').textContent = cachedStats.utilityCount || 0;
                 document.getElementById('utility-total').textContent = cachedStats.utilityTotal?.toFixed(2) || '0.00';
