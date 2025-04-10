@@ -139,33 +139,27 @@
 
         async function fetchData() {
             document.getElementById('current-period').textContent = formatBillingPeriod();
-            const now = Date.now();
-
+            
             try {
-                // Only fetch if an hour has passed or no cached data
-                if (now - lastFetchTime >= HOUR_IN_MS || !cachedStats || !cachedRate) {
-                    const [statsRes, rateRes] = await Promise.all([
-                        fetch('/billing/stats'),
-                        fetch('/billing/exchange-rate')
-                    ]);
+                const [statsRes, rateRes] = await Promise.all([
+                    fetch('/billing/stats'),
+                    fetch('/billing/exchange-rate')
+                ]);
 
-                    if (!statsRes.ok || !rateRes.ok) {
-                        throw new Error('Failed to fetch data');
-                    }
-
-                    cachedStats = await statsRes.json();
-                    const rateData = await rateRes.json();
-                    cachedRate = rateData.rate;
-                    lastFetchTime = now;
+                if (!statsRes.ok || !rateRes.ok) {
+                    throw new Error('Failed to fetch data');
                 }
 
+                const stats = await statsRes.json();
+                const rateData = await rateRes.json();
+                
                 // Update exchange rate display
-                document.getElementById('exchange-rate').textContent = `1 USD = ${cachedRate.toFixed(2)} ZAR`;
+                document.getElementById('exchange-rate').textContent = `1 USD = ${rateData.rate.toFixed(2)} ZAR`;
 
-                // Update metrics
-                document.getElementById('total-messages').textContent = cachedStats.totalMessages || 0;
-                document.getElementById('billable-sessions').textContent = cachedStats.billableSessions || 0;
-                document.getElementById('monthly-users').textContent = cachedStats.monthlyActiveUsers || 0;
+                // Update metrics - directly use the fresh data
+                document.getElementById('total-messages').textContent = stats.totalMessages;
+                document.getElementById('billable-sessions').textContent = stats.billableSessions;
+                document.getElementById('monthly-users').textContent = stats.monthlyActiveUsers;
 
                 // Update costs
                 document.getElementById('session-cost-usd').textContent = cachedStats.sessionCost?.toFixed(2) || '0.00';
