@@ -152,17 +152,23 @@
 
                 const stats = await statsRes.json();
                 const rateData = await rateRes.json();
+                const rate = rateData.rate;
                 
                 // Update exchange rate display
-                document.getElementById('exchange-rate').textContent = `1 USD = ${rateData.rate.toFixed(2)} ZAR`;
+                document.getElementById('exchange-rate').textContent = `1 USD = ${rate.toFixed(2)} ZAR`;
 
-                // Update metrics - directly use the fresh data
-                document.getElementById('total-messages').textContent = stats.totalMessages;
-                document.getElementById('billable-sessions').textContent = stats.billableSessions;
-                document.getElementById('monthly-users').textContent = stats.monthlyActiveUsers;
+                // Update metrics
+                document.getElementById('total-messages').textContent = stats.totalMessages || 0;
+                document.getElementById('billable-sessions').textContent = stats.billableSessions || 0;
+                document.getElementById('monthly-users').textContent = stats.monthlyActiveUsers || 0;
 
                 // Update costs
-                document.getElementById('session-cost-usd').textContent = cachedStats.sessionCost?.toFixed(2) || '0.00';
+                document.getElementById('session-cost-usd').textContent = stats.sessionCost?.toFixed(2) || '0.00';
+                document.getElementById('session-cost-zar').textContent = ((stats.sessionCost || 0) * rate).toFixed(2);
+                document.getElementById('mau-cost-usd').textContent = stats.mauCost?.toFixed(2) || '0.00';
+                document.getElementById('mau-cost-zar').textContent = ((stats.mauCost || 0) * rate).toFixed(2);
+                document.getElementById('total-cost-usd').textContent = stats.totalCost?.toFixed(2) || '0.00';
+                document.getElementById('total-cost-zar').textContent = ((stats.totalCost || 0) * rate).toFixed(2);
                 document.getElementById('session-cost-zar').textContent = ((cachedStats.sessionCost || 0) * cachedRate).toFixed(2);
 
                 // Update carrier and utility details
