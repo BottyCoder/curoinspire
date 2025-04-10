@@ -59,12 +59,28 @@ router.get('/stats', checkAuth, async (req, res) => {
     const now = moment().tz('Africa/Johannesburg');
     const startOfMonth = now.clone().startOf('month');
 
-    // Include message_month in query with proper timezone handling
+    // Get all billing records for current month without limit
     const { data: billingRecords, error: queryError } = await supabase
+      .from('billing_records')
+      .select('count')
+      .gte('message_timestamp', startOfMonth.format())
+      .single();
+
+    // Get the actual billing records
+    const { data: fullBillingRecords, error: fullQueryError } = await supabase
       .from('billing_records')
       .select('*')
       .gte('message_timestamp', startOfMonth.format())
       .order('message_timestamp', { ascending: false });
+
+    if (fullQueryError) throw fullQueryError;
+    
+    // Update console log to show actual count
+    console.log('Billing query params:', {
+      startTime: startOfMonth.format(),
+      records: fullBillingRecords?.length || 0,
+      totalRecords: billingRecords?.count || 0
+    });
 
     console.log('Billing query params:', {
       startTime: startOfMonth.format(),
