@@ -163,7 +163,7 @@
                 document.getElementById('exchange-rate').textContent = `1 USD = ${cachedRate.toFixed(2)} ZAR`;
 
                 // Update metrics
-                document.getElementById('total-messages').textContent = cachedStats.totalMessages;
+                document.getElementById('total-messages').textContent = cachedStats.totalMessages || 0;
                 document.getElementById('billable-sessions').textContent = cachedStats.billableSessions || 0;
                 document.getElementById('monthly-users').textContent = cachedStats.monthlyActiveUsers || 0;
 
