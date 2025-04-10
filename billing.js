@@ -59,48 +59,44 @@ router.get('/stats', checkAuth, async (req, res) => {
     const now = moment().tz('Africa/Johannesburg');
     const startOfMonth = now.clone().startOf('month');
 
+    // Get total count first
+    const { count: totalCount, error: countError } = await supabase
+      .from('billing_records')
+      .select('*', { count: 'exact', head: true })
+      .gte('message_timestamp', startOfMonth.format());
+
+    if (countError) throw countError;
+
     // Get all billing records for current month using pagination
     let allBillingRecords = [];
     let page = 0;
     const pageSize = 1000;
     
     while (true) {
-      const { data: pageRecords, error: queryError } = await supabase
+      const { data: pageRecords, error: pageError } = await supabase
         .from('billing_records')
         .select('*')
         .gte('message_timestamp', startOfMonth.format())
         .order('message_timestamp', { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
-      if (queryError) throw queryError;
+      if (pageError) throw pageError;
       if (!pageRecords || pageRecords.length === 0) break;
       
       allBillingRecords = [...allBillingRecords, ...pageRecords];
       if (pageRecords.length < pageSize) break;
       page++;
     }
-
-    const billingRecords = allBillingRecords;
     
     console.log('Billing query params:', {
       startTime: startOfMonth.format(),
-      records: billingRecords?.length || 0
+      totalCount,
+      recordsFetched: allBillingRecords.length
     });
 
-    // // Log query time info
-    // console.log('Query Time Info:', {
-    //   currentTime: now.format(),
-    //   startOfMonth: startOfMonth.format(),
-    //   timezone: now.tz()
-    // });
+    const billingRecords = allBillingRecords;
 
-    // console.log('Full billing records:', JSON.stringify(billingRecords, null, 2));
-    // console.log('Query conditions:', {
-    //   startOfMonth: startOfMonth.toISOString(),
-    //   currentTime: now.toISOString()
-    // });
-
-    if (queryError) {
+    if (!billingRecords || billingRecords.length === 0) {
       console.error('Supabase query error:', queryError);
       console.error('Query params:', {
         startOfMonth: startOfMonth.format(),
