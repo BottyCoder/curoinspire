@@ -68,26 +68,39 @@ const insertStatusToDb = async (statusDetails) => {
     });
 
     // Determine if this is first message of the month (for MAU charging)
+    // Only charge MAU if there's NO previous record for this number in current month
     const isFirstOfMonth = !monthlyRecord?.[0];
 
-    if (!lastSession?.[0] || isFirstOfMonth) {
+    // Only create billing record if:
+    // 1. No session within 23h50m window (new session), OR
+    // 2. First message of month for this number (MAU charge needed)
+    const isNewSession = !lastSession?.[0];
+    
+    if (isNewSession || isFirstOfMonth) {
       const billingRecord = {
         whatsapp_message_id: messageId,
         mobile_number: recipientId,
         message_timestamp: messageTime.toISOString(),
         session_start_time: messageTime.toISOString(),
-        cost_utility: 0.0076,
-        cost_carrier: 0.0100,
+        cost_utility: isNewSession ? 0.0076 : 0.0000,
+        cost_carrier: isNewSession ? 0.0100 : 0.0000,
         cost_mau: isFirstOfMonth ? 0.0600 : 0.0000,
-        total_cost: isFirstOfMonth ? 0.0776 : 0.0176,
+        total_cost: (isNewSession ? 0.0176 : 0.0000) + (isFirstOfMonth ? 0.0600 : 0.0000),
         is_mau_charged: isFirstOfMonth,
-        message_month: `${messageTime.getFullYear()}-${String(messageTime.getMonth() + 1).padStart(2, '0')}-01` // First day of month
+        message_month: `${messageTime.getFullYear()}-${String(messageTime.getMonth() + 1).padStart(2, '0')}-01`
       };
 
-      console.log('Creating new billing record:', {
+      console.log('Creating billing record:', {
         mobile: recipientId,
         messageTime: messageTime.toISOString(),
-        isFirstOfMonth
+        isNewSession,
+        isFirstOfMonth,
+        costs: {
+          utility: billingRecord.cost_utility,
+          carrier: billingRecord.cost_carrier,
+          mau: billingRecord.cost_mau,
+          total: billingRecord.total_cost
+        }
       });
 
       const { error: billingError } = await supabase
@@ -98,7 +111,7 @@ const insertStatusToDb = async (statusDetails) => {
         console.error('Failed to insert billing record:', billingError);
       }
     } else {
-      console.log('Message part of existing session:', {
+      console.log('Message part of existing session - no billing record needed:', {
         mobile: recipientId,
         sessionStart: lastSession[0].session_start_time
       });
