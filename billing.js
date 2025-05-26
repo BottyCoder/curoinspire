@@ -3,6 +3,7 @@ const router = express.Router();
 const moment = require('moment-timezone');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
+const XLSX = require('xlsx');
 
 // Initialize Supabase with service role key
 const supabase = createClient(
@@ -440,6 +441,217 @@ router.get('/validate-billing', checkAuth, async (req, res) => {
   } catch (error) {
     console.error('Error in billing validation:', error);
     res.status(500).json({ error: 'Failed to validate billing data' });
+  }
+});
+
+// Excel export endpoint
+router.get('/export-excel', checkAuth, async (req, res) => {
+  try {
+    const now = moment().tz('Africa/Johannesburg');
+    const startOfMonth = now.clone().startOf('month');
+    const monthYear = startOfMonth.format('YYYY-MM');
+
+    // Get all billing records for current month
+    let allBillingRecords = [];
+    let page = 0;
+    const pageSize = 1000;
+
+    while (true) {
+      const { data: pageRecords, error: pageError } = await supabase
+        .from('billing_records')
+        .select('*')
+        .gte('message_timestamp', startOfMonth.format())
+        .order('message_timestamp', { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (pageError) throw pageError;
+      if (!pageRecords || pageRecords.length === 0) break;
+
+      allBillingRecords = [...allBillingRecords, ...pageRecords];
+      if (pageRecords.length < pageSize) break;
+      page++;
+    }
+
+    const billingRecords = allBillingRecords;
+
+    // Calculate the same stats as the dashboard
+    if (!billingRecords || billingRecords.length === 0) {
+      const emptyData = [{
+        'Metric': 'No data available for this month',
+        'Value': '',
+        'Cost (USD)': '',
+        'Details': ''
+      }];
+      
+      const worksheet = XLSX.utils.json_to_sheet(emptyData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Billing Stats');
+      
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="billing-stats-${monthYear}.xlsx"`);
+      return res.send(buffer);
+    }
+
+    // Group messages by user and session (same logic as stats endpoint)
+    const sessions = billingRecords.reduce((acc, record) => {
+      const mobileNumber = record.mobile_number || record.recipient_number;
+      if (!acc[mobileNumber]) {
+        acc[mobileNumber] = [];
+      }
+      acc[mobileNumber].push({
+        timestamp: moment(record.message_timestamp),
+        sessionStart: moment(record.session_start_time),
+        costs: {
+          utility: parseFloat(record.cost_utility) || 0,
+          carrier: parseFloat(record.cost_carrier) || 0,
+          mau: parseFloat(record.cost_mau) || 0,
+          total: parseFloat(record.total_cost) || 0
+        },
+        is_mau_charged: record.is_mau_charged
+      });
+      return acc;
+    }, {});
+
+    let carrierCount = 0;
+    let carrierTotal = 0;
+    let utilityCount = 0;
+    let utilityTotal = 0;
+    let sessionCount = 0;
+
+    // Calculate metrics
+    for (const [user, messages] of Object.entries(sessions)) {
+      if (!messages || messages.length === 0) continue;
+
+      messages.sort((a, b) => a.timestamp - b.timestamp);
+
+      let activeSessions = [];
+      let currentSession = [messages[0]];
+
+      for (let i = 1; i < messages.length; i++) {
+        const timeDiff = messages[i].timestamp.diff(currentSession[0].timestamp, 'minutes');
+        if (timeDiff <= 1430) {
+          currentSession.push(messages[i]);
+        } else {
+          activeSessions.push(currentSession);
+          currentSession = [messages[i]];
+        }
+      }
+      if (currentSession.length > 0) {
+        activeSessions.push(currentSession);
+      }
+
+      sessionCount += activeSessions.length;
+      carrierCount += activeSessions.length;
+      utilityCount += activeSessions.length;
+      carrierTotal += activeSessions.length * 0.01;
+      utilityTotal += activeSessions.length * 0.0076;
+    }
+
+    const sessionCost = carrierTotal + utilityTotal;
+    const mauCost = billingRecords
+      .filter(record => record.is_mau_charged === true)
+      .reduce((sum, record) => sum + (parseFloat(record.cost_mau) || 0), 0);
+    const totalCost = sessionCost + mauCost;
+    const monthlyActiveUsers = Object.keys(sessions).length;
+
+    // Create Excel data matching the dashboard display
+    const excelData = [
+      {
+        'Metric': 'Total Messages',
+        'Value': billingRecords.length,
+        'Cost (USD)': '',
+        'Details': 'All messages processed this month'
+      },
+      {
+        'Metric': 'Billable Sessions',
+        'Value': sessionCount,
+        'Cost (USD)': sessionCost.toFixed(4),
+        'Details': 'Sessions with 23h50m gap threshold'
+      },
+      {
+        'Metric': 'Monthly Active Users',
+        'Value': monthlyActiveUsers,
+        'Cost (USD)': mauCost.toFixed(4),
+        'Details': 'Unique mobile numbers'
+      },
+      {
+        'Metric': 'Carrier Fees',
+        'Value': carrierCount,
+        'Cost (USD)': carrierTotal.toFixed(4),
+        'Details': '$0.01 per session'
+      },
+      {
+        'Metric': 'Utility Fees',
+        'Value': utilityCount,
+        'Cost (USD)': utilityTotal.toFixed(4),
+        'Details': '$0.0076 per session'
+      },
+      {
+        'Metric': 'MAU Cost',
+        'Value': monthlyActiveUsers,
+        'Cost (USD)': mauCost.toFixed(4),
+        'Details': '$0.06 per unique user'
+      },
+      {
+        'Metric': 'TOTAL COST',
+        'Value': '',
+        'Cost (USD)': totalCost.toFixed(4),
+        'Details': 'Session costs + MAU costs'
+      }
+    ];
+
+    // Add summary info at the top
+    const summaryData = [
+      {
+        'Metric': 'Billing Period',
+        'Value': now.format('MMMM YYYY'),
+        'Cost (USD)': '',
+        'Details': `${startOfMonth.format('YYYY-MM-DD')} to ${now.format('YYYY-MM-DD')}`
+      },
+      {
+        'Metric': 'Export Date',
+        'Value': now.format('YYYY-MM-DD HH:mm:ss'),
+        'Cost (USD)': '',
+        'Details': 'Africa/Johannesburg timezone'
+      },
+      {
+        'Metric': '',
+        'Value': '',
+        'Cost (USD)': '',
+        'Details': ''
+      }
+    ];
+
+    const finalData = [...summaryData, ...excelData];
+
+    // Create Excel workbook
+    const worksheet = XLSX.utils.json_to_sheet(finalData);
+    
+    // Set column widths
+    worksheet['!cols'] = [
+      { width: 20 }, // Metric
+      { width: 15 }, // Value
+      { width: 15 }, // Cost
+      { width: 35 }  // Details
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Billing Stats');
+
+    // Generate buffer
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="billing-stats-${monthYear}.xlsx"`);
+    
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('Error generating Excel export:', error);
+    res.status(500).json({ error: 'Failed to generate Excel export' });
   }
 });
 
