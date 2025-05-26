@@ -556,8 +556,39 @@ router.get('/export-excel', checkAuth, async (req, res) => {
     const totalCost = sessionCost + mauCost;
     const monthlyActiveUsers = Object.keys(sessions).length;
 
-    // Create Excel data matching the dashboard display
-    const excelData = [
+    // Create detailed line items data
+    const lineItemsData = billingRecords.map(record => ({
+      'Timestamp': moment(record.message_timestamp).tz('Africa/Johannesburg').format('DD/MM/YYYY, HH:mm:ss'),
+      'Mobile Number': record.mobile_number,
+      'WhatsApp ID': record.whatsapp_message_id,
+      'Utility Cost': `$${(parseFloat(record.cost_utility) || 0).toFixed(4)}`,
+      'Carrier Cost': `$${(parseFloat(record.cost_carrier) || 0).toFixed(4)}`,
+      'MAU Cost': `$${(parseFloat(record.cost_mau) || 0).toFixed(4)}`,
+      'Total Cost': `$${(parseFloat(record.total_cost) || 0).toFixed(4)}`,
+      'Session Start': moment(record.session_start_time).tz('Africa/Johannesburg').format('DD/MM/YYYY, HH:mm:ss'),
+      'Is MAU Charged': record.is_mau_charged ? 'Yes' : 'No'
+    }));
+
+    // Create summary stats data (for optional summary sheet)
+    const summaryStatsData = [
+      {
+        'Metric': 'Billing Period',
+        'Value': now.format('MMMM YYYY'),
+        'Cost (USD)': '',
+        'Details': `${startOfMonth.format('YYYY-MM-DD')} to ${now.format('YYYY-MM-DD')}`
+      },
+      {
+        'Metric': 'Export Date',
+        'Value': now.format('YYYY-MM-DD HH:mm:ss'),
+        'Cost (USD)': '',
+        'Details': 'Africa/Johannesburg timezone'
+      },
+      {
+        'Metric': '',
+        'Value': '',
+        'Cost (USD)': '',
+        'Details': ''
+      },
       {
         'Metric': 'Total Messages',
         'Value': billingRecords.length,
@@ -577,24 +608,6 @@ router.get('/export-excel', checkAuth, async (req, res) => {
         'Details': 'Unique mobile numbers'
       },
       {
-        'Metric': 'Carrier Fees',
-        'Value': carrierCount,
-        'Cost (USD)': carrierTotal.toFixed(4),
-        'Details': '$0.01 per session'
-      },
-      {
-        'Metric': 'Utility Fees',
-        'Value': utilityCount,
-        'Cost (USD)': utilityTotal.toFixed(4),
-        'Details': '$0.0076 per session'
-      },
-      {
-        'Metric': 'MAU Cost',
-        'Value': monthlyActiveUsers,
-        'Cost (USD)': mauCost.toFixed(4),
-        'Details': '$0.06 per unique user'
-      },
-      {
         'Metric': 'TOTAL COST',
         'Value': '',
         'Cost (USD)': totalCost.toFixed(4),
@@ -602,43 +615,33 @@ router.get('/export-excel', checkAuth, async (req, res) => {
       }
     ];
 
-    // Add summary info at the top
-    const summaryData = [
-      {
-        'Metric': 'Billing Period',
-        'Value': now.format('MMMM YYYY'),
-        'Cost (USD)': '',
-        'Details': `${startOfMonth.format('YYYY-MM-DD')} to ${now.format('YYYY-MM-DD')}`
-      },
-      {
-        'Metric': 'Export Date',
-        'Value': now.format('YYYY-MM-DD HH:mm:ss'),
-        'Cost (USD)': '',
-        'Details': 'Africa/Johannesburg timezone'
-      },
-      {
-        'Metric': '',
-        'Value': '',
-        'Cost (USD)': '',
-        'Details': ''
-      }
-    ];
-
-    const finalData = [...summaryData, ...excelData];
-
-    // Create Excel workbook
-    const worksheet = XLSX.utils.json_to_sheet(finalData);
+    // Create Excel workbook with line items as primary sheet
+    const workbook = XLSX.utils.book_new();
     
-    // Set column widths
-    worksheet['!cols'] = [
+    // Line Items sheet (main sheet)
+    const lineItemsWorksheet = XLSX.utils.json_to_sheet(lineItemsData);
+    lineItemsWorksheet['!cols'] = [
+      { width: 18 }, // Timestamp
+      { width: 15 }, // Mobile Number
+      { width: 35 }, // WhatsApp ID
+      { width: 12 }, // Utility Cost
+      { width: 12 }, // Carrier Cost
+      { width: 12 }, // MAU Cost
+      { width: 12 }, // Total Cost
+      { width: 18 }, // Session Start
+      { width: 12 }  // Is MAU Charged
+    ];
+    XLSX.utils.book_append_sheet(workbook, lineItemsWorksheet, 'Line Items');
+    
+    // Summary sheet (optional)
+    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryStatsData);
+    summaryWorksheet['!cols'] = [
       { width: 20 }, // Metric
       { width: 15 }, // Value
       { width: 15 }, // Cost
       { width: 35 }  // Details
     ];
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Billing Stats');
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
 
     // Generate buffer
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
