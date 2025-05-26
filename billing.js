@@ -813,7 +813,7 @@ router.get('/export-excel', checkAuth, async (req, res) => {
         'Metric': 'Billable Sessions',
         'Value': sessionCount,
         'Cost (USD)': sessionCost.toFixed(4),
-        'Details': 'Sessions with 23hh50m gap threshold'
+        'Details': 'Sessions with 23hh50mm gap threshold'
       },
       {
         'Metric': 'Monthly Active Users',
@@ -862,6 +862,7 @@ router.get('/export-excel', checkAuth, async (req, res) => {
 
     // Set response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
     const filename = `billing-stats-${monthYear}.xlsx`;
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
@@ -870,13 +871,44 @@ router.get('/export-excel', checkAuth, async (req, res) => {
 
     // Write the buffer to the file
     fs.writeFileSync(filePath, buffer);
-
     res.send(buffer);
 
   } catch (error) {
     console.error('Error generating Excel export:', error);
     res.status(500).json({ error: 'Failed to generate Excel export' });
   }
+});
+
+// Route to download the report for a specific month
+router.get('/download-report', checkAuth, (req, res) => {
+  const { month } = req.query;
+
+  if (!month) {
+    return res.status(400).send('Month parameter is required');
+  }
+
+  // Correct filename
+  const filename = `billing-stats-${month}.xlsx`;
+  const filePath = path.join(reportsDir, filename);
+
+  // Check if the file exists
+  if (!fs.existsSync(filePath)) {
+    console.log(`File not found: ${filePath}`);
+    return res.status(404).send('Report not found for the specified month');
+  }
+
+  // Set appropriate headers for file download
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+  // Stream the file to the response
+  const fileStream = fs.createReadStream(filePath);
+  fileStream.pipe(res);
+
+  fileStream.on('error', (err) => {
+    console.error('File stream error:', err);
+    res.status(500).send('Error streaming the report');
+  });
 });
 
 // Serve static files from the "reports" directory
