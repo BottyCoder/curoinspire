@@ -23,10 +23,10 @@ const insertStatusToDb = async (statusDetails) => {
     const sessionWindowMinutes = 1430; // 23h50m
     const messageTimeDate = new Date(messageTime);
     const sessionCutoff = new Date(messageTimeDate.getTime() - (sessionWindowMinutes * 60 * 1000));
-    
+
     // Get start of current month (for MAU checking)
     const currentMonth = new Date(messageTimeDate.getFullYear(), messageTimeDate.getMonth(), 1);
-    
+
     console.log('Processing message:', {
       number: recipientId,
       messageTime: messageTimeDate.toISOString(),
@@ -73,19 +73,23 @@ const insertStatusToDb = async (statusDetails) => {
 
     // Only create billing record if:
     // 1. No session within 23h50m window (new session), OR
-    // 2. First message of month for this number (MAU charge needed)
+    // 2. First message of the month for this number (MAU charge needed)
     const isNewSession = !lastSession?.[0];
-    
+
     if (isNewSession || isFirstOfMonth) {
+      // FIXED LOGIC: MAU and Carrier are mutually exclusive
+      // If first message of month -> charge MAU + Utility, no Carrier
+      // If new session (not first of month) -> charge Carrier + Utility, no MAU
+
       const billingRecord = {
         whatsapp_message_id: messageId,
         mobile_number: recipientId,
         message_timestamp: messageTime.toISOString(),
         session_start_time: messageTime.toISOString(),
-        cost_utility: isNewSession ? 0.0076 : 0.0000,
-        cost_carrier: isNewSession ? 0.0100 : 0.0000,
+        cost_utility: (isNewSession || isFirstOfMonth) ? 0.0076 : 0.0000,
+        cost_carrier: (isNewSession && !isFirstOfMonth) ? 0.0100 : 0.0000,
         cost_mau: isFirstOfMonth ? 0.0600 : 0.0000,
-        total_cost: (isNewSession ? 0.0176 : 0.0000) + (isFirstOfMonth ? 0.0600 : 0.0000),
+        total_cost: 0.0076 + (isFirstOfMonth ? 0.0600 : (isNewSession ? 0.0100 : 0.0000)),
         is_mau_charged: isFirstOfMonth,
         message_month: `${messageTime.getFullYear()}-${String(messageTime.getMonth() + 1).padStart(2, '0')}-01`
       };
@@ -159,7 +163,7 @@ const insertStatusToDb = async (statusDetails) => {
 router.get('/', (req, res) => {
   console.log("=== INCOMING WHATSAPP VERIFICATION REQUEST ===");
   console.log("Query params:", req.query);
-  
+
   // Always return 200 since 360dialog handles authentication
   res.sendStatus(200);
 });
@@ -170,7 +174,7 @@ router.post('/', async (req, res) => {
   console.log(`Timestamp: ${requestTimestamp}`);
   console.log("\n=== REQUEST HEADERS ===");
   console.log(JSON.stringify(req.headers, null, 2));
-  
+
   console.log("\n=== FULL PAYLOAD STRUCTURE ===");
   const payload = req.body;
   console.log(JSON.stringify(payload, null, 2));
@@ -183,7 +187,7 @@ router.post('/', async (req, res) => {
     console.log("Has Messages:", !!value.messages);
     console.log("Message Count:", value.messages?.length || 0);
     console.log("Metadata:", value.metadata || "None");
-    
+
     if (value.statuses) {
       console.log("\n=== STATUS DETAILS ===");
       value.statuses.forEach((status, index) => {
@@ -191,7 +195,7 @@ router.post('/', async (req, res) => {
         console.log(JSON.stringify(status, null, 2));
       });
     }
-    
+
     if (value.messages) {
       console.log("\n=== MESSAGE DETAILS ===");
       value.messages.forEach((msg, index) => {
