@@ -21,6 +21,9 @@
                 <button id="export-btn" class="export-button" onclick="exportToExcel()">
                     Export to Excel
                 </button>
+                <button id="test-email-btn" class="export-button" onclick="sendTestEmail()" style="margin-left: 10px;">
+                    Send Test Email
+                </button>
             </div>
         </div>
 
@@ -214,6 +217,36 @@
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }, 2000);
+        }
+
+        async function sendTestEmail() {
+            const btn = document.getElementById('test-email-btn');
+            const originalText = btn.innerHTML;
+
+            btn.innerHTML = '📧 Sending...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/billing/test-email');
+                const data = await response.json();
+
+                if (data.success) {
+                    btn.innerHTML = '✅ Sent!';
+                    alert('Test email sent successfully to marc@botforce.co.za');
+                } else {
+                    btn.innerHTML = '❌ Failed';
+                    alert('Failed to send test email: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                btn.innerHTML = '❌ Failed';
+                alert('Error sending test email: ' + error.message);
+            }
+
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 3000);
         }
 
         // Start the data fetching process

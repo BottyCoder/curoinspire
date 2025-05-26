@@ -689,6 +689,18 @@ router.get('/validate-billing', checkAuth, async (req, res) => {
   }
 });
 
+// Test email endpoint
+router.get('/test-email', checkAuth, async (req, res) => {
+  try {
+    console.log('🧪 Manual test email requested...');
+    await generateAndEmailMonthlyReport();
+    res.json({ success: true, message: 'Test email sent successfully!' });
+  } catch (error) {
+    console.error('❌ Error sending test email:', error);
+    res.status(500).json({ error: 'Failed to send test email', details: error.message });
+  }
+});
+
 // Excel export endpoint
 router.get('/export-excel', checkAuth, async (req, res) => {
   try {
