@@ -235,14 +235,24 @@
         function exportToExcel() {
             const btn = document.getElementById('export-btn');
             const originalText = btn.innerHTML;
+            const selectedMonth = document.getElementById('month-dropdown').value;
 
             btn.innerHTML = '⏳ Exporting...';
             btn.disabled = true;
 
             // Create a temporary link and trigger download
             const link = document.createElement('a');
-            link.href = '/billing/export-excel';
-            link.download = `billing-stats-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}.xlsx`;
+            
+            if (selectedMonth) {
+                // Export selected month from stored reports
+                link.href = `/billing/download-report?month=${selectedMonth}`;
+                link.download = `billing-stats-${selectedMonth}.xlsx`;
+            } else {
+                // Export current month (live data)
+                link.href = '/billing/export-excel';
+                link.download = `billing-stats-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}.xlsx`;
+            }
+            
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -270,18 +280,11 @@
             }
         }
 
-        // Event listener for month dropdown change
+        // Month dropdown selection (no automatic download)
         document.getElementById('month-dropdown').addEventListener('change', function() {
             const selectedMonth = this.value;
-            if (selectedMonth) {
-                // Create a temporary link and trigger download
-                const link = document.createElement('a');
-                link.href = `/billing/download-report?month=${selectedMonth}`;
-                link.download = `billing-stats-${selectedMonth}.xlsx`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+            // Just store the selection, don't auto-download
+            console.log('Selected month:', selectedMonth);
         });
 
         async function fetchRecentSessions() {
