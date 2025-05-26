@@ -71,7 +71,7 @@ router.get('/stats', checkAuth, async (req, res) => {
     let allBillingRecords = [];
     let page = 0;
     const pageSize = 1000;
-    
+
     while (true) {
       const { data: pageRecords, error: pageError } = await supabase
         .from('billing_records')
@@ -82,12 +82,12 @@ router.get('/stats', checkAuth, async (req, res) => {
 
       if (pageError) throw pageError;
       if (!pageRecords || pageRecords.length === 0) break;
-      
+
       allBillingRecords = [...allBillingRecords, ...pageRecords];
       if (pageRecords.length < pageSize) break;
       page++;
     }
-    
+
     console.log('Billing query params:', {
       startTime: startOfMonth.format(),
       totalCount,
@@ -225,6 +225,221 @@ router.get('/stats', checkAuth, async (req, res) => {
   } catch (error) {
     console.error('Error in /stats route:', error);
     res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// Database validation utility - compares actual DB records against stats calculations
+router.get('/validate-billing', checkAuth, async (req, res) => {
+  try {
+    const now = moment().tz('Africa/Johannesburg');
+    const startOfMonth = now.clone().startOf('month');
+
+    console.log('Starting billing validation...');
+
+    // Get ALL billing records for current month
+    let allBillingRecords = [];
+    let page = 0;
+    const pageSize = 1000;
+
+    while (true) {
+      const { data: pageRecords, error: pageError } = await supabase
+        .from('billing_records')
+        .select('*')
+        .gte('message_timestamp', startOfMonth.format())
+        .order('message_timestamp', { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (pageError) throw pageError;
+      if (!pageRecords || pageRecords.length === 0) break;
+
+      allBillingRecords = [...allBillingRecords, ...pageRecords];
+      if (pageRecords.length < pageSize) break;
+      page++;
+    }
+
+    const dbRecords = allBillingRecords;
+    console.log(`Fetched ${dbRecords.length} database records`);
+
+    // === DATABASE FACTS ===
+    const dbFacts = {
+      totalRecords: dbRecords.length,
+      uniqueNumbers: [...new Set(dbRecords.map(r => r.mobile_number))].length,
+      totalMauCost: dbRecords.reduce((sum, r) => sum + (parseFloat(r.cost_mau) || 0), 0),
+      totalUtilityCost: dbRecords.reduce((sum, r) => sum + (parseFloat(r.cost_utility) || 0), 0),
+      totalCarrierCost: dbRecords.reduce((sum, r) => sum + (parseFloat(r.cost_carrier) || 0), 0),
+      totalCost: dbRecords.reduce((sum, r) => sum + (parseFloat(r.total_cost) || 0), 0),
+      mauChargedRecords: dbRecords.filter(r => r.is_mau_charged === true).length,
+      numbersWithMAU: [...new Set(dbRecords.filter(r => r.is_mau_charged === true).map(r => r.mobile_number))].length
+    };
+
+    // === RECALCULATED STATS (same logic as /stats endpoint) ===
+    const sessions = dbRecords.reduce((acc, record) => {
+      const mobileNumber = record.mobile_number || record.recipient_number;
+      if (!acc[mobileNumber]) {
+        acc[mobileNumber] = [];
+      }
+      acc[mobileNumber].push({
+        timestamp: moment(record.message_timestamp),
+        sessionStart: moment(record.session_start_time),
+        costs: {
+          utility: parseFloat(record.cost_utility) || 0,
+          carrier: parseFloat(record.cost_carrier) || 0,
+          mau: parseFloat(record.cost_mau) || 0,
+          total: parseFloat(record.total_cost) || 0
+        },
+        is_mau_charged: record.is_mau_charged
+      });
+      return acc;
+    }, {});
+
+    let calculatedSessions = 0;
+    let calculatedCarrierCost = 0;
+    let calculatedUtilityCost = 0;
+
+    // Calculate sessions using same logic as stats endpoint
+    for (const [user, messages] of Object.entries(sessions)) {
+      if (!messages || messages.length === 0) continue;
+
+      messages.sort((a, b) => a.timestamp - b.timestamp);
+
+      let activeSessions = [];
+      let currentSession = [messages[0]];
+
+      for (let i = 1; i < messages.length; i++) {
+        const timeDiff = messages[i].timestamp.diff(currentSession[0].timestamp, 'minutes');
+        if (timeDiff <= 1430) {
+          currentSession.push(messages[i]);
+        } else {
+          activeSessions.push(currentSession);
+          currentSession = [messages[i]];
+        }
+      }
+      if (currentSession.length > 0) {
+        activeSessions.push(currentSession);
+      }
+
+      calculatedSessions += activeSessions.length;
+      calculatedCarrierCost += activeSessions.length * 0.01;
+      calculatedUtilityCost += activeSessions.length * 0.0076;
+    }
+
+    const calculatedStats = {
+      totalMessages: dbRecords.length,
+      billableSessions: calculatedSessions,
+      monthlyActiveUsers: Object.keys(sessions).length,
+      sessionCost: calculatedCarrierCost + calculatedUtilityCost,
+      mauCost: dbFacts.totalMauCost, // Use actual DB MAU cost
+      totalCost: (calculatedCarrierCost + calculatedUtilityCost) + dbFacts.totalMauCost,
+      carrierCost: calculatedCarrierCost,
+      utilityCost: calculatedUtilityCost
+    };
+
+    // === VALIDATION RESULTS ===
+    const validationResults = {
+      messagesMatch: dbFacts.totalRecords === calculatedStats.totalMessages,
+      mauUsersMatch: dbFacts.uniqueNumbers === calculatedStats.monthlyActiveUsers,
+
+      // Cost validations
+      mauCostValid: Math.abs(dbFacts.totalMauCost - calculatedStats.mauCost) < 0.001,
+      utilityCostValid: Math.abs(dbFacts.totalUtilityCost - calculatedStats.utilityCost) < 0.001,
+      carrierCostValid: Math.abs(dbFacts.totalCarrierCost - calculatedStats.carrierCost) < 0.001,
+      totalCostValid: Math.abs(dbFacts.totalCost - calculatedStats.totalCost) < 0.001,
+
+      // MAU logic validation
+      mauChargesExpected: dbFacts.uniqueNumbers, // Should have 1 MAU charge per unique number
+      mauChargesActual: dbFacts.mauChargedRecords,
+      mauLogicValid: dbFacts.mauChargedRecords === dbFacts.numbersWithMAU, // Each number should have exactly 1 MAU charge
+
+      // Expected vs actual MAU cost
+      expectedMauCost: dbFacts.uniqueNumbers * 0.06,
+      actualMauCost: dbFacts.totalMauCost,
+      mauCostExpectedValid: Math.abs((dbFacts.uniqueNumbers * 0.06) - dbFacts.totalMauCost) < 0.001
+    };
+
+    // === ISSUE DETECTION ===
+    const issues = [];
+
+    if (!validationResults.messagesMatch) {
+      issues.push(`Message count mismatch: DB has ${dbFacts.totalRecords}, calculated ${calculatedStats.totalMessages}`);
+    }
+
+    if (!validationResults.mauUsersMatch) {
+      issues.push(`MAU count mismatch: DB has ${dbFacts.uniqueNumbers} unique numbers, calculated ${calculatedStats.monthlyActiveUsers}`);
+    }
+
+    if (!validationResults.mauLogicValid) {
+      issues.push(`MAU logic broken: ${dbFacts.mauChargedRecords} MAU charges but ${dbFacts.numbersWithMAU} numbers with MAU`);
+    }
+
+    if (!validationResults.mauCostExpectedValid) {
+      issues.push(`MAU cost wrong: Expected $${(dbFacts.uniqueNumbers * 0.06).toFixed(4)}, got $${dbFacts.totalMauCost.toFixed(4)}`);
+    }
+
+    if (!validationResults.utilityCostValid) {
+      issues.push(`Utility cost mismatch: DB $${dbFacts.totalUtilityCost.toFixed(4)}, calculated $${calculatedStats.utilityCost.toFixed(4)}`);
+    }
+
+    if (!validationResults.carrierCostValid) {
+      issues.push(`Carrier cost mismatch: DB $${dbFacts.totalCarrierCost.toFixed(4)}, calculated $${calculatedStats.carrierCost.toFixed(4)}`);
+    }
+
+    // === SAMPLE ISSUES ===
+    const sampleIssues = [];
+
+    // Check for numbers with multiple MAU charges
+    const numberMauCounts = {};
+    dbRecords.filter(r => r.is_mau_charged).forEach(r => {
+      const num = r.mobile_number;
+      numberMauCounts[num] = (numberMauCounts[num] || 0) + 1;
+    });
+
+    Object.entries(numberMauCounts).forEach(([number, count]) => {
+      if (count > 1) {
+        sampleIssues.push({
+          type: 'Multiple MAU charges',
+          number,
+          issue: `${count} MAU charges for same number in same month`
+        });
+      }
+    });
+
+    // Check for numbers with no MAU charges
+    const numbersWithMessages = [...new Set(dbRecords.map(r => r.mobile_number))];
+    const numbersWithMAUCharges = [...new Set(dbRecords.filter(r => r.is_mau_charged).map(r => r.mobile_number))];
+
+    numbersWithMessages.forEach(number => {
+      if (!numbersWithMAUCharges.includes(number)) {
+        sampleIssues.push({
+          type: 'Missing MAU charge',
+          number,
+          issue: 'Has messages but no MAU charge'
+        });
+      }
+    });
+
+    res.json({
+      timestamp: now.format(),
+      month: startOfMonth.format('YYYY-MM'),
+      isValid: issues.length === 0,
+      summary: `${issues.length} validation issues found`,
+
+      databaseFacts: dbFacts,
+      calculatedStats: calculatedStats,
+      validationResults: validationResults,
+
+      issues: issues,
+      sampleIssues: sampleIssues.slice(0, 10), // Show first 10 sample issues
+
+      recommendations: issues.length > 0 ? [
+        'Check webhook logic for MAU charging',
+        'Verify session grouping is working correctly',
+        'Run database cleanup if needed'
+      ] : ['Billing system is working correctly']
+    });
+
+  } catch (error) {
+    console.error('Error in billing validation:', error);
+    res.status(500).json({ error: 'Failed to validate billing data' });
   }
 });
 
