@@ -443,4 +443,18 @@ router.get('/validate-billing', checkAuth, async (req, res) => {
   }
 });
 
+## Test the validation utility:
+```bash
+curl -X GET "https://curo-inspire-testing.replit.app/billing/validate-billing"
+```
+
+## Test the monthly summary:
+```bash
+curl -X GET "https://curo-inspire-testing.replit.app/billing/monthly-summary"
+```
+
+## Test with pretty formatting:
+```bash
+curl -X GET "https://curo-inspire-testing.replit.app/billing/validate-billing" | jq '.'
+```
 module.exports = router;
