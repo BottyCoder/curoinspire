@@ -19,22 +19,36 @@ const insertStatusToDb = async (statusDetails) => {
     const messageTime = new Date(timestamp * 1000);
     const currentTimestamp = new Date().toISOString();
 
-    // Get the last session for this number in the past 23h50m
+    // Get the last session for this number in the past 23h50m (for session grouping)
     const sessionWindowMinutes = 1430; // 23h50m
     const messageTimeDate = new Date(messageTime);
     const sessionCutoff = new Date(messageTimeDate.getTime() - (sessionWindowMinutes * 60 * 1000));
     
+    // Get start of current month (for MAU checking)
+    const currentMonth = new Date(messageTimeDate.getFullYear(), messageTimeDate.getMonth(), 1);
+    
     console.log('Processing message:', {
       number: recipientId,
       messageTime: messageTimeDate.toISOString(),
-      sessionCutoff: sessionCutoff.toISOString()
+      sessionCutoff: sessionCutoff.toISOString(),
+      currentMonthStart: currentMonth.toISOString()
     });
 
+    // Check for existing session within 23h50m window
     const { data: lastSession } = await supabase
       .from("billing_records")
       .select("*")
       .eq("mobile_number", recipientId)
-      .gte("message_timestamp", sessionCutoff.toISOString()) // Changed to message_timestamp
+      .gte("message_timestamp", sessionCutoff.toISOString())
+      .order("message_timestamp", { ascending: false })
+      .limit(1);
+
+    // Check for ANY billing record for this number in current month (for MAU)
+    const { data: monthlyRecord } = await supabase
+      .from("billing_records")
+      .select("is_mau_charged")
+      .eq("mobile_number", recipientId)
+      .gte("message_timestamp", currentMonth.toISOString())
       .order("message_timestamp", { ascending: false })
       .limit(1);
 
@@ -46,17 +60,15 @@ const insertStatusToDb = async (statusDetails) => {
       });
     }
 
-    console.log('Session window check:', {
+    console.log('MAU check:', {
       messageTime: messageTimeDate.toISOString(),
-      cutoffTime: sessionCutoff.toISOString(),
-      lastSessionTime: lastSession?.[0]?.session_start_time,
-      hasValidSession: !!lastSession?.[0]
+      monthStart: currentMonth.toISOString(),
+      hasMonthlyRecord: !!monthlyRecord?.[0],
+      alreadyChargedMAU: monthlyRecord?.[0]?.is_mau_charged
     });
 
-    // Determine if this is first message of the month
-    const isFirstOfMonth = !lastSession?.[0] || 
-      new Date(lastSession[0].session_start_time).getMonth() !== messageTimeDate.getMonth() ||
-      new Date(lastSession[0].session_start_time).getFullYear() !== messageTimeDate.getFullYear();
+    // Determine if this is first message of the month (for MAU charging)
+    const isFirstOfMonth = !monthlyRecord?.[0];
 
     if (!lastSession?.[0] || isFirstOfMonth) {
       const billingRecord = {

@@ -157,7 +157,7 @@ router.get('/stats', checkAuth, async (req, res) => {
     let utilityTotal = 0;
     let sessionCount = 0;
 
-    // Calculate metrics
+    // Calculate metrics from actual database records
     for (const [user, messages] of Object.entries(sessions)) {
       if (!messages || messages.length === 0) continue;
 
@@ -191,15 +191,16 @@ router.get('/stats', checkAuth, async (req, res) => {
       carrierTotal += activeSessions.length * 0.01; // $0.01 once per session
       utilityTotal += activeSessions.length * 0.0076; // $0.0076 once per session
 
-
       billableSessions += activeSessions.length;
-
-      // Calculate session cost as sum of carrier and utility fees per session
-      sessionCost = carrierTotal + utilityTotal;
-
-      // Add MAU cost for each unique user regardless of is_mau_charged flag
-      mauCost += 0.06; // Fixed MAU cost per user
     }
+
+    // Calculate session cost as sum of carrier and utility fees per session
+    sessionCost = carrierTotal + utilityTotal;
+
+    // Calculate MAU cost from actual database records (not recalculated)
+    mauCost = billingRecords
+      .filter(record => record.is_mau_charged === true)
+      .reduce((sum, record) => sum + (parseFloat(record.cost_mau) || 0), 0);
 
     // Count unique mobile numbers for MAU
     monthlyActiveUsers = Object.keys(sessions).length;
