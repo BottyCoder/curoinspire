@@ -7,6 +7,40 @@
     <meta name="googlebot" content="noindex, nofollow">
     <title>WhatsApp Billing Dashboard</title>
     <link rel="stylesheet" href="/styles/main.css">
+    <style>
+        .export-button {
+            background-color: #501050;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .export-button:hover {
+            background-color: #401040;
+        }
+
+        .export-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .reports-dropdown {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+            min-width: 200px;
+        }
+
+        .reports-dropdown:focus {
+            outline: none;
+            border-color: #501050;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -21,9 +55,10 @@
                 <button id="export-btn" class="export-button" onclick="exportToExcel()">
                     Export to Excel
                 </button>
-                <button id="test-email-btn" class="export-button" onclick="sendTestEmail()" style="margin-left: 10px;">
-                    Send Test Email
-                </button>
+                
+                <select id="month-dropdown" class="reports-dropdown">
+                    <option value="">Select Month</option>
+                    </select>
             </div>
         </div>
 
@@ -219,39 +254,35 @@
             }, 2000);
         }
 
-        async function sendTestEmail() {
-            const btn = document.getElementById('test-email-btn');
-            const originalText = btn.innerHTML;
+        // Function to populate month dropdown
+        function populateMonthDropdown() {
+            const dropdown = document.getElementById('month-dropdown');
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const currentYear = new Date().getFullYear();
 
-            btn.innerHTML = '📧 Sending...';
-            btn.disabled = true;
-
-            try {
-                const response = await fetch('/billing/test-email');
-                const data = await response.json();
-
-                if (data.success) {
-                    btn.innerHTML = '✅ Sent!';
-                    alert('Test email sent successfully to marc@botforce.co.za');
-                } else {
-                    btn.innerHTML = '❌ Failed';
-                    alert('Failed to send test email: ' + (data.error || 'Unknown error'));
-                }
-            } catch (error) {
-                btn.innerHTML = '❌ Failed';
-                alert('Error sending test email: ' + error.message);
+            for (let i = 0; i < 12; i++) {
+                const monthIndex = i;
+                const monthName = months[monthIndex];
+                const option = document.createElement('option');
+                option.value = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}`;
+                option.textContent = `${monthName} ${currentYear}`;
+                dropdown.appendChild(option);
             }
-
-            // Reset button after 3 seconds
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }, 3000);
         }
 
-        // Start the data fetching process
-        fetchData();
-        setInterval(fetchData, HOUR_IN_MS); // Refresh every hour
+        // Event listener for month dropdown change
+        document.getElementById('month-dropdown').addEventListener('change', function() {
+            const selectedMonth = this.value;
+            if (selectedMonth) {
+                // Create a temporary link and trigger download
+                const link = document.createElement('a');
+                link.href = `/billing/download-report?month=${selectedMonth}`;
+                link.download = `billing-stats-${selectedMonth}.xlsx`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
 
         async function fetchRecentSessions() {
             try {
@@ -281,6 +312,13 @@
                     '<tr><td colspan="7" class="p-2 text-center text-red-500">Failed to load recent sessions</td></tr>';
             }
         }
+
+        // Start the data fetching process
+        fetchData();
+        setInterval(fetchData, HOUR_IN_MS); // Refresh every hour
+
+        // Populate month dropdown on page load
+        populateMonthDropdown();
 
         // Initial fetch and setup interval
         fetchRecentSessions();

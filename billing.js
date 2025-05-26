@@ -5,7 +5,7 @@ const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 const XLSX = require('xlsx');
 const cron = require('node-cron');
-const nodemailer = require('nodemailer');
+const fs = require('fs');
 
 // Initialize Supabase with service role key
 const supabase = createClient(
@@ -16,26 +16,21 @@ const supabase = createClient(
   }
 );
 
-// Email transporter configuration
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-});
+// Create reports directory if it doesn't exist
+const reportsDir = path.join(__dirname, 'reports');
+if (!fs.existsSync(reportsDir)) {
+  fs.mkdirSync(reportsDir, { recursive: true });
+}
 
 // Automated monthly export function
-async function generateAndEmailMonthlyReport() {
+async function generateAndStoreMonthlyReport() {
   try {
     console.log('🔄 Starting automated monthly billing export...');
-    
+
     const now = moment().tz('Africa/Johannesburg');
     const startOfMonth = now.clone().startOf('month');
     const monthYear = startOfMonth.format('YYYY-MM');
-    
+
     // Get all billing records for current month (same logic as export endpoint)
     let allBillingRecords = [];
     let page = 0;
@@ -60,7 +55,7 @@ async function generateAndEmailMonthlyReport() {
     const billingRecords = allBillingRecords;
 
     if (!billingRecords || billingRecords.length === 0) {
-      console.log('📧 No billing data for this month - sending empty report');
+      console.log('📧 No billing data for this month - creating empty report');
     }
 
     // Generate Excel file (same logic as export endpoint)
@@ -180,7 +175,7 @@ async function generateAndEmailMonthlyReport() {
 
     // Create Excel workbook
     const workbook = XLSX.utils.book_new();
-    
+
     // Line Items sheet
     const lineItemsWorksheet = XLSX.utils.json_to_sheet(lineItemsData);
     lineItemsWorksheet['!cols'] = [
@@ -188,7 +183,7 @@ async function generateAndEmailMonthlyReport() {
       { width: 12 }, { width: 12 }, { width: 12 }, { width: 18 }, { width: 12 }
     ];
     XLSX.utils.book_append_sheet(workbook, lineItemsWorksheet, 'Line Items');
-    
+
     // Summary sheet
     const summaryWorksheet = XLSX.utils.json_to_sheet(summaryStatsData);
     summaryWorksheet['!cols'] = [
@@ -198,45 +193,17 @@ async function generateAndEmailMonthlyReport() {
 
     // Generate buffer
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    
-    // Send email with attachment
-    const mailOptions = {
-      from: process.env.SMTP_USER,
-      to: 'marc@botforce.co.za',
-      subject: `Monthly Billing Report - ${now.format('MMMM YYYY')}`,
-      html: `
-        <h2>Monthly Billing Report</h2>
-        <p>Hi Marc,</p>
-        <p>Please find attached the automated monthly billing report for <strong>${now.format('MMMM YYYY')}</strong>.</p>
-        
-        <h3>Summary:</h3>
-        <ul>
-          <li><strong>Total Messages:</strong> ${billingRecords.length}</li>
-          <li><strong>Billable Sessions:</strong> ${sessionCount}</li>
-          <li><strong>Monthly Active Users:</strong> ${monthlyActiveUsers}</li>
-          <li><strong>Total Cost:</strong> $${totalCost.toFixed(4)} USD</li>
-        </ul>
-        
-        <p>The attached Excel file contains detailed line items and summary statistics.</p>
-        
-        <p>Report generated automatically on ${now.format('YYYY-MM-DD HH:mm:ss')} (Africa/Johannesburg)</p>
-        
-        <p>Best regards,<br>Billing System</p>
-      `,
-      attachments: [
-        {
-          filename: `billing-report-${monthYear}.xlsx`,
-          content: buffer,
-          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        }
-      ]
-    };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Monthly billing report emailed successfully for ${monthYear}`);
-    
+    // Define the file path
+    const filePath = path.join(reportsDir, `billing-report-${monthYear}.xlsx`);
+
+    // Write the buffer to the file
+    fs.writeFileSync(filePath, buffer);
+
+    console.log(`✅ Monthly billing report stored successfully for ${monthYear} at ${filePath}`);
+
   } catch (error) {
-    console.error('❌ Error generating/sending monthly report:', error);
+    console.error('❌ Error generating/storing monthly report:', error);
   }
 }
 
@@ -246,11 +213,11 @@ async function generateAndEmailMonthlyReport() {
 cron.schedule('50 23 28-31 * *', () => {
   const now = moment().tz('Africa/Johannesburg');
   const tomorrow = now.clone().add(1, 'day');
-  
+
   // Only run if tomorrow is the first day of next month (i.e., today is last day of month)
   if (tomorrow.date() === 1) {
     console.log('🔄 Running scheduled monthly billing export...');
-    generateAndEmailMonthlyReport();
+    generateAndStoreMonthlyReport();
   }
 }, {
   scheduled: true,
@@ -689,17 +656,7 @@ router.get('/validate-billing', checkAuth, async (req, res) => {
   }
 });
 
-// Test email endpoint
-router.get('/test-email', checkAuth, async (req, res) => {
-  try {
-    console.log('🧪 Manual test email requested...');
-    await generateAndEmailMonthlyReport();
-    res.json({ success: true, message: 'Test email sent successfully!' });
-  } catch (error) {
-    console.error('❌ Error sending test email:', error);
-    res.status(500).json({ error: 'Failed to send test email', details: error.message });
-  }
-});
+// Removed test email endpoint
 
 // Excel export endpoint
 router.get('/export-excel', checkAuth, async (req, res) => {
@@ -739,13 +696,13 @@ router.get('/export-excel', checkAuth, async (req, res) => {
         'Cost (USD)': '',
         'Details': ''
       }];
-      
+
       const worksheet = XLSX.utils.json_to_sheet(emptyData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Billing Stats');
-      
+
       const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-      
+
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="billing-stats-${monthYear}.xlsx"`);
       return res.send(buffer);
@@ -856,7 +813,7 @@ router.get('/export-excel', checkAuth, async (req, res) => {
         'Metric': 'Billable Sessions',
         'Value': sessionCount,
         'Cost (USD)': sessionCost.toFixed(4),
-        'Details': 'Sessions with 23h50m gap threshold'
+        'Details': 'Sessions with 23hh50m gap threshold'
       },
       {
         'Metric': 'Monthly Active Users',
@@ -874,7 +831,7 @@ router.get('/export-excel', checkAuth, async (req, res) => {
 
     // Create Excel workbook with line items as primary sheet
     const workbook = XLSX.utils.book_new();
-    
+
     // Line Items sheet (main sheet)
     const lineItemsWorksheet = XLSX.utils.json_to_sheet(lineItemsData);
     lineItemsWorksheet['!cols'] = [
@@ -889,7 +846,7 @@ router.get('/export-excel', checkAuth, async (req, res) => {
       { width: 12 }  // Is MAU Charged
     ];
     XLSX.utils.book_append_sheet(workbook, lineItemsWorksheet, 'Line Items');
-    
+
     // Summary sheet (optional)
     const summaryWorksheet = XLSX.utils.json_to_sheet(summaryStatsData);
     summaryWorksheet['!cols'] = [
@@ -905,14 +862,37 @@ router.get('/export-excel', checkAuth, async (req, res) => {
 
     // Set response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="billing-stats-${monthYear}.xlsx"`);
-    
+    const filename = `billing-stats-${monthYear}.xlsx`;
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    // Define the file path
+    const filePath = path.join(reportsDir, filename);
+
+    // Write the buffer to the file
+    fs.writeFileSync(filePath, buffer);
+
     res.send(buffer);
 
   } catch (error) {
     console.error('Error generating Excel export:', error);
     res.status(500).json({ error: 'Failed to generate Excel export' });
   }
+});
+
+// Serve static files from the "reports" directory
+router.use('/reports', express.static(path.join(__dirname, 'reports')));
+
+// Route to list available reports
+router.get('/list-reports', checkAuth, (req, res) => {
+  fs.readdir(reportsDir, (err, files) => {
+    if (err) {
+      console.error("Could not list the directory.", err);
+      return res.status(500).send("Unable to list reports");
+    }
+
+    const reports = files.filter(file => file.endsWith('.xlsx'));
+    return res.json(reports);
+  });
 });
 
 module.exports = router;
