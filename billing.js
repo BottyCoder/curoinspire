@@ -4,6 +4,8 @@ const moment = require('moment-timezone');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 const XLSX = require('xlsx');
+const cron = require('node-cron');
+const nodemailer = require('nodemailer');
 
 // Initialize Supabase with service role key
 const supabase = createClient(
@@ -13,6 +15,249 @@ const supabase = createClient(
     auth: { persistSession: false }
   }
 );
+
+// Email transporter configuration
+const transporter = nodemailer.createTransporter({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
+
+// Automated monthly export function
+async function generateAndEmailMonthlyReport() {
+  try {
+    console.log('🔄 Starting automated monthly billing export...');
+    
+    const now = moment().tz('Africa/Johannesburg');
+    const startOfMonth = now.clone().startOf('month');
+    const monthYear = startOfMonth.format('YYYY-MM');
+    
+    // Get all billing records for current month (same logic as export endpoint)
+    let allBillingRecords = [];
+    let page = 0;
+    const pageSize = 1000;
+
+    while (true) {
+      const { data: pageRecords, error: pageError } = await supabase
+        .from('billing_records')
+        .select('*')
+        .gte('message_timestamp', startOfMonth.format())
+        .order('message_timestamp', { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (pageError) throw pageError;
+      if (!pageRecords || pageRecords.length === 0) break;
+
+      allBillingRecords = [...allBillingRecords, ...pageRecords];
+      if (pageRecords.length < pageSize) break;
+      page++;
+    }
+
+    const billingRecords = allBillingRecords;
+
+    if (!billingRecords || billingRecords.length === 0) {
+      console.log('📧 No billing data for this month - sending empty report');
+    }
+
+    // Generate Excel file (same logic as export endpoint)
+    const sessions = billingRecords.reduce((acc, record) => {
+      const mobileNumber = record.mobile_number || record.recipient_number;
+      if (!acc[mobileNumber]) {
+        acc[mobileNumber] = [];
+      }
+      acc[mobileNumber].push({
+        timestamp: moment(record.message_timestamp),
+        sessionStart: moment(record.session_start_time),
+        costs: {
+          utility: parseFloat(record.cost_utility) || 0,
+          carrier: parseFloat(record.cost_carrier) || 0,
+          mau: parseFloat(record.cost_mau) || 0,
+          total: parseFloat(record.total_cost) || 0
+        },
+        is_mau_charged: record.is_mau_charged
+      });
+      return acc;
+    }, {});
+
+    let sessionCount = 0;
+    let carrierTotal = 0;
+    let utilityTotal = 0;
+
+    for (const [user, messages] of Object.entries(sessions)) {
+      if (!messages || messages.length === 0) continue;
+
+      messages.sort((a, b) => a.timestamp - b.timestamp);
+      let activeSessions = [];
+      let currentSession = [messages[0]];
+
+      for (let i = 1; i < messages.length; i++) {
+        const timeDiff = messages[i].timestamp.diff(currentSession[0].timestamp, 'minutes');
+        if (timeDiff <= 1430) {
+          currentSession.push(messages[i]);
+        } else {
+          activeSessions.push(currentSession);
+          currentSession = [messages[i]];
+        }
+      }
+      if (currentSession.length > 0) {
+        activeSessions.push(currentSession);
+      }
+
+      sessionCount += activeSessions.length;
+      carrierTotal += activeSessions.length * 0.01;
+      utilityTotal += activeSessions.length * 0.0076;
+    }
+
+    const sessionCost = carrierTotal + utilityTotal;
+    const mauCost = billingRecords
+      .filter(record => record.is_mau_charged === true)
+      .reduce((sum, record) => sum + (parseFloat(record.cost_mau) || 0), 0);
+    const totalCost = sessionCost + mauCost;
+    const monthlyActiveUsers = Object.keys(sessions).length;
+
+    // Create line items data
+    const lineItemsData = billingRecords.map(record => ({
+      'Timestamp': moment(record.message_timestamp).tz('Africa/Johannesburg').format('DD/MM/YYYY, HH:mm:ss'),
+      'Mobile Number': record.mobile_number,
+      'WhatsApp ID': record.whatsapp_message_id,
+      'Utility Cost': `$${(parseFloat(record.cost_utility) || 0).toFixed(4)}`,
+      'Carrier Cost': `$${(parseFloat(record.cost_carrier) || 0).toFixed(4)}`,
+      'MAU Cost': `$${(parseFloat(record.cost_mau) || 0).toFixed(4)}`,
+      'Total Cost': `$${(parseFloat(record.total_cost) || 0).toFixed(4)}`,
+      'Session Start': moment(record.session_start_time).tz('Africa/Johannesburg').format('DD/MM/YYYY, HH:mm:ss'),
+      'Is MAU Charged': record.is_mau_charged ? 'Yes' : 'No'
+    }));
+
+    // Create summary data
+    const summaryStatsData = [
+      {
+        'Metric': 'Billing Period',
+        'Value': now.format('MMMM YYYY'),
+        'Cost (USD)': '',
+        'Details': `${startOfMonth.format('YYYY-MM-DD')} to ${now.format('YYYY-MM-DD')}`
+      },
+      {
+        'Metric': 'Export Date',
+        'Value': now.format('YYYY-MM-DD HH:mm:ss'),
+        'Cost (USD)': '',
+        'Details': 'Africa/Johannesburg timezone'
+      },
+      {
+        'Metric': '',
+        'Value': '',
+        'Cost (USD)': '',
+        'Details': ''
+      },
+      {
+        'Metric': 'Total Messages',
+        'Value': billingRecords.length,
+        'Cost (USD)': '',
+        'Details': 'All messages processed this month'
+      },
+      {
+        'Metric': 'Billable Sessions',
+        'Value': sessionCount,
+        'Cost (USD)': sessionCost.toFixed(4),
+        'Details': 'Sessions with 23h50m gap threshold'
+      },
+      {
+        'Metric': 'Monthly Active Users',
+        'Value': monthlyActiveUsers,
+        'Cost (USD)': mauCost.toFixed(4),
+        'Details': 'Unique mobile numbers'
+      },
+      {
+        'Metric': 'TOTAL COST',
+        'Value': '',
+        'Cost (USD)': totalCost.toFixed(4),
+        'Details': 'Session costs + MAU costs'
+      }
+    ];
+
+    // Create Excel workbook
+    const workbook = XLSX.utils.book_new();
+    
+    // Line Items sheet
+    const lineItemsWorksheet = XLSX.utils.json_to_sheet(lineItemsData);
+    lineItemsWorksheet['!cols'] = [
+      { width: 18 }, { width: 15 }, { width: 35 }, { width: 12 },
+      { width: 12 }, { width: 12 }, { width: 12 }, { width: 18 }, { width: 12 }
+    ];
+    XLSX.utils.book_append_sheet(workbook, lineItemsWorksheet, 'Line Items');
+    
+    // Summary sheet
+    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryStatsData);
+    summaryWorksheet['!cols'] = [
+      { width: 20 }, { width: 15 }, { width: 15 }, { width: 35 }
+    ];
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
+
+    // Generate buffer
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    // Send email with attachment
+    const mailOptions = {
+      from: process.env.SMTP_USER,
+      to: 'marc@botforce.co.za',
+      subject: `Monthly Billing Report - ${now.format('MMMM YYYY')}`,
+      html: `
+        <h2>Monthly Billing Report</h2>
+        <p>Hi Marc,</p>
+        <p>Please find attached the automated monthly billing report for <strong>${now.format('MMMM YYYY')}</strong>.</p>
+        
+        <h3>Summary:</h3>
+        <ul>
+          <li><strong>Total Messages:</strong> ${billingRecords.length}</li>
+          <li><strong>Billable Sessions:</strong> ${sessionCount}</li>
+          <li><strong>Monthly Active Users:</strong> ${monthlyActiveUsers}</li>
+          <li><strong>Total Cost:</strong> $${totalCost.toFixed(4)} USD</li>
+        </ul>
+        
+        <p>The attached Excel file contains detailed line items and summary statistics.</p>
+        
+        <p>Report generated automatically on ${now.format('YYYY-MM-DD HH:mm:ss')} (Africa/Johannesburg)</p>
+        
+        <p>Best regards,<br>Billing System</p>
+      `,
+      attachments: [
+        {
+          filename: `billing-report-${monthYear}.xlsx`,
+          content: buffer,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }
+      ]
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Monthly billing report emailed successfully for ${monthYear}`);
+    
+  } catch (error) {
+    console.error('❌ Error generating/sending monthly report:', error);
+  }
+}
+
+// Schedule automated export for last day of month at 23:50
+// Cron: minute hour day month day-of-week
+// This runs at 23:50 on the last day of every month
+cron.schedule('50 23 28-31 * *', () => {
+  const now = moment().tz('Africa/Johannesburg');
+  const tomorrow = now.clone().add(1, 'day');
+  
+  // Only run if tomorrow is the first day of next month (i.e., today is last day of month)
+  if (tomorrow.date() === 1) {
+    console.log('🔄 Running scheduled monthly billing export...');
+    generateAndEmailMonthlyReport();
+  }
+}, {
+  scheduled: true,
+  timezone: "Africa/Johannesburg"
+});
+
+console.log('📅 Monthly billing export scheduled for last day of month at 23:50 (Africa/Johannesburg)');
 
 // Auth middleware
 const checkAuth = (req, res, next) => {
