@@ -103,25 +103,44 @@ body {
 }
 
 .export-button {
-  background-color: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .export-button:hover:not(:disabled) {
-  background-color: #059669;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.export-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
 }
 
 .export-button:disabled {
-  background-color: #9ca3af;
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
   cursor: not-allowed;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transform: none;
+}
+
+.export-icon {
+  font-size: 1rem;
 }
 
 .recent-sessions {
