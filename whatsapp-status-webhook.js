@@ -154,35 +154,32 @@ const insertStatusToDb = async (statusDetails) => {
     });
 
     // Check if this status update is for a message that originated from Inspire
-    // Look for sent messages to this number that have tracking codes
-    const { data: originalMessages } = await supabase
+    // Look for the most recent sent message to this number that has both tracking code and client_guid
+    const { data: originalMessage } = await supabase
       .from("messages_log")
-      .select("tracking_code, original_wamid")
+      .select("tracking_code, original_wamid, client_guid")
       .eq("mobile_number", recipientId)
       .eq("status", "sent")
       .not("tracking_code", "is", null)
+      .not("client_guid", "is", null)
       .order("timestamp", { ascending: false })
-      .limit(5); // Check last 5 sent messages
+      .limit(1)
+      .single();
 
     let pushSuccess = null;
-    let foundOriginalMessage = null;
-
-    // Check if this status update messageId matches any of our sent message IDs
-    if (originalMessages && originalMessages.length > 0) {
-      foundOriginalMessage = originalMessages.find(msg => msg.original_wamid === messageId);
-    }
     
-    if (foundOriginalMessage?.tracking_code) {
-      console.log(`📤 Status update for message ${messageId} - found original with tracking code ${foundOriginalMessage.tracking_code} - pushing to Inspire`);
+    if (originalMessage?.client_guid) {
+      console.log(`📤 Status update for message ${messageId} - found Inspire message with ClientGuid ${originalMessage.client_guid} - pushing to Inspire`);
       
       pushSuccess = await pushToInspireChatState({
-        messageId: messageId,
+        clientGuid: originalMessage.client_guid, // Use ClientGuid instead of messageId
         recipientNumber: recipientId,
         status: status,
         timestamp: timestamp,
         statusTimestamp: currentTimestamp,
         channel: 'whatsapp',
-        messageType: 'status_update'
+        messageType: 'status_update',
+        trackingCode: originalMessage.tracking_code
       });
 
       // Update the record with Inspire push results
@@ -196,10 +193,10 @@ const insertStatusToDb = async (statusDetails) => {
       if (updateError) {
         console.error('Failed to update Inspire push status:', updateError);
       } else {
-        console.log(`✅ Updated Inspire push status: ${pushSuccess ? 'success' : 'failed'} for message ${messageId}`);
+        console.log(`✅ Updated Inspire push status: ${pushSuccess ? 'success' : 'failed'} for ClientGuid ${originalMessage.client_guid}`);
       }
     } else {
-      console.log(`⏭️ Status update for message ${messageId} - no matching Inspire-originated message found - skipping push`);
+      console.log(`⏭️ Status update for message ${messageId} - no recent Inspire-originated message with ClientGuid found for ${recipientId} - skipping push`);
       
       // Mark as skipped in database
       const { error: updateError } = await supabase

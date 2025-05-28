@@ -1,4 +1,3 @@
-
 const axios = require('axios');
 
 const INSPIRE_ENDPOINT = 'https://www.inspire-ohs.com/API/V3/WA/WAChatState';
@@ -12,21 +11,22 @@ const MAX_RETRIES = 3;
 async function pushToInspireChatState(statusData) {
   const payload = {
     apiKey: process.env.INSPIRE_API_KEY,
-    messageId: statusData.messageId,
+    ClientGuid: statusData.clientGuid, // Use ClientGuid instead of messageId
     recipientNumber: statusData.recipientNumber,
     status: statusData.status,
     timestamp: statusData.timestamp,
     statusTimestamp: statusData.statusTimestamp,
     channel: statusData.channel || 'whatsapp',
-    messageType: statusData.messageType
+    messageType: statusData.messageType,
+    trackingCode: statusData.trackingCode
   };
 
   let lastError = null;
-  
+
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       console.log(`🚀 Pushing to Inspire (attempt ${attempt}/${MAX_RETRIES}):`, {
-        messageId: payload.messageId,
+        ClientGuid: payload.ClientGuid,
         status: payload.status,
         recipientNumber: payload.recipientNumber
       });
@@ -39,7 +39,7 @@ async function pushToInspireChatState(statusData) {
       });
 
       console.log(`✅ Inspire push successful (attempt ${attempt}):`, {
-        messageId: payload.messageId,
+        ClientGuid: payload.ClientGuid,
         status: response.status,
         data: response.data
       });
@@ -49,7 +49,7 @@ async function pushToInspireChatState(statusData) {
     } catch (error) {
       lastError = error;
       console.error(`❌ Inspire push failed (attempt ${attempt}/${MAX_RETRIES}):`, {
-        messageId: payload.messageId,
+        ClientGuid: payload.ClientGuid,
         error: error.message,
         status: error.response?.status,
         data: error.response?.data
@@ -70,7 +70,7 @@ async function pushToInspireChatState(statusData) {
     }
   }
 
-  console.error(`💥 All Inspire push attempts failed for message ${payload.messageId}:`, lastError?.message);
+  console.error(`💥 All Inspire push attempts failed for message ${payload.ClientGuid}:`, lastError?.message);
   return false;
 }
 
