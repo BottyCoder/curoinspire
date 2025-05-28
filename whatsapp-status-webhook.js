@@ -153,29 +153,52 @@ const insertStatusToDb = async (statusDetails) => {
       timestamp: currentTimestamp
     });
 
-    // Push to Inspire endpoint and update the record with push status
-    const pushSuccess = await pushToInspireChatState({
-      messageId: messageId,
-      recipientNumber: recipientId,
-      status: status,
-      timestamp: timestamp,
-      statusTimestamp: currentTimestamp,
-      channel: 'whatsapp',
-      messageType: 'status_update'
-    });
-
-    // Update the record with Inspire push results
-    const { error: updateError } = await supabase
+    // Only push to Inspire if this message has a tracking_code (meaning it originated from Inspire)
+    const { data: originalMessage } = await supabase
       .from("messages_log")
-      .update({
-        inspire_push_status: pushSuccess ? 'success' : 'failed'
-      })
-      .eq('id', data[0].id);
+      .select("tracking_code")
+      .eq("original_wamid", messageId)
+      .not("tracking_code", "is", null)
+      .single();
 
-    if (updateError) {
-      console.error('Failed to update Inspire push status:', updateError);
+    let pushSuccess = null;
+    
+    if (originalMessage?.tracking_code) {
+      console.log(`📤 Message ${messageId} has tracking code - pushing to Inspire`);
+      
+      pushSuccess = await pushToInspireChatState({
+        messageId: messageId,
+        recipientNumber: recipientId,
+        status: status,
+        timestamp: timestamp,
+        statusTimestamp: currentTimestamp,
+        channel: 'whatsapp',
+        messageType: 'status_update'
+      });
+
+      // Update the record with Inspire push results
+      const { error: updateError } = await supabase
+        .from("messages_log")
+        .update({
+          inspire_push_status: pushSuccess ? 'success' : 'failed'
+        })
+        .eq('id', data[0].id);
+
+      if (updateError) {
+        console.error('Failed to update Inspire push status:', updateError);
+      } else {
+        console.log(`✅ Updated Inspire push status: ${pushSuccess ? 'success' : 'failed'} for message ${messageId}`);
+      }
     } else {
-      console.log(`✅ Updated Inspire push status: ${pushSuccess ? 'success' : 'failed'} for message ${messageId}`);
+      console.log(`⏭️ Message ${messageId} has no tracking code - skipping Inspire push (not an Inspire-originated message)`);
+      
+      // Mark as skipped in database
+      const { error: updateError } = await supabase
+        .from("messages_log")
+        .update({
+          inspire_push_status: 'skipped'
+        })
+        .eq('id', data[0].id);
     }
 
     return data;
