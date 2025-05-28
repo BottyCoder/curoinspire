@@ -154,12 +154,13 @@ const insertStatusToDb = async (statusDetails) => {
     });
 
     // Check if this status update is for a message that originated from Inspire
-    // Look for the most recent sent message to this number that has both tracking code and client_guid
+    // Look for the most recent message to this number that has both tracking code and client_guid
+    // Include both "pending" and "sent" status messages since messages start as pending
     const { data: originalMessage } = await supabase
       .from("messages_log")
       .select("tracking_code, original_wamid, client_guid")
       .eq("mobile_number", recipientId)
-      .eq("status", "sent")
+      .in("status", ["pending", "sent"])
       .not("tracking_code", "is", null)
       .not("client_guid", "is", null)
       .order("timestamp", { ascending: false })
