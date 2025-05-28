@@ -1,5 +1,6 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
+const { pushToInspireChatState } = require('./inspire-chat-state');
 const router = express.Router();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -151,6 +152,31 @@ const insertStatusToDb = async (statusDetails) => {
       status: status,
       timestamp: currentTimestamp
     });
+
+    // Push to Inspire endpoint and update the record with push status
+    const pushSuccess = await pushToInspireChatState({
+      messageId: messageId,
+      recipientNumber: recipientId,
+      status: status,
+      timestamp: timestamp,
+      statusTimestamp: currentTimestamp,
+      channel: 'whatsapp',
+      messageType: 'status_update'
+    });
+
+    // Update the record with Inspire push results
+    const { error: updateError } = await supabase
+      .from("messages_log")
+      .update({
+        inspire_push_status: pushSuccess ? 'success' : 'failed'
+      })
+      .eq('id', data[0].id);
+
+    if (updateError) {
+      console.error('Failed to update Inspire push status:', updateError);
+    } else {
+      console.log(`✅ Updated Inspire push status: ${pushSuccess ? 'success' : 'failed'} for message ${messageId}`);
+    }
 
     return data;
   } catch (err) {
