@@ -153,18 +153,27 @@ const insertStatusToDb = async (statusDetails) => {
       timestamp: currentTimestamp
     });
 
-    // Only push to Inspire if this message has a tracking_code (meaning it originated from Inspire)
-    const { data: originalMessage } = await supabase
+    // Check if this status update is for a message that originated from Inspire
+    // Look for sent messages to this number that have tracking codes
+    const { data: originalMessages } = await supabase
       .from("messages_log")
-      .select("tracking_code")
-      .eq("original_wamid", messageId)
+      .select("tracking_code, original_wamid")
+      .eq("mobile_number", recipientId)
+      .eq("status", "sent")
       .not("tracking_code", "is", null)
-      .single();
+      .order("timestamp", { ascending: false })
+      .limit(5); // Check last 5 sent messages
 
     let pushSuccess = null;
+    let foundOriginalMessage = null;
+
+    // Check if this status update messageId matches any of our sent message IDs
+    if (originalMessages && originalMessages.length > 0) {
+      foundOriginalMessage = originalMessages.find(msg => msg.original_wamid === messageId);
+    }
     
-    if (originalMessage?.tracking_code) {
-      console.log(`📤 Message ${messageId} has tracking code - pushing to Inspire`);
+    if (foundOriginalMessage?.tracking_code) {
+      console.log(`📤 Status update for message ${messageId} - found original with tracking code ${foundOriginalMessage.tracking_code} - pushing to Inspire`);
       
       pushSuccess = await pushToInspireChatState({
         messageId: messageId,
@@ -190,7 +199,7 @@ const insertStatusToDb = async (statusDetails) => {
         console.log(`✅ Updated Inspire push status: ${pushSuccess ? 'success' : 'failed'} for message ${messageId}`);
       }
     } else {
-      console.log(`⏭️ Message ${messageId} has no tracking code - skipping Inspire push (not an Inspire-originated message)`);
+      console.log(`⏭️ Status update for message ${messageId} - no matching Inspire-originated message found - skipping push`);
       
       // Mark as skipped in database
       const { error: updateError } = await supabase
@@ -199,6 +208,10 @@ const insertStatusToDb = async (statusDetails) => {
           inspire_push_status: 'skipped'
         })
         .eq('id', data[0].id);
+
+      if (updateError) {
+        console.error('Failed to update skipped status:', updateError);
+      }
     }
 
     return data;
