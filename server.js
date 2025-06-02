@@ -53,6 +53,7 @@ app.get('/', (req, res) => {
 app.use('/whatsapp-status-webhook', whatsappStatusWebhook);
 app.use('/billing', billingRoutes);
 app.use('/combined', combinedBillingRoutes);
+app.use('/reports', require('./may-billing-report'));
 
 // Add route handler for get-message-status
 app.get('/get-message-status', async (req, res) => {
@@ -334,7 +335,7 @@ app.post("/receive-reply", async (req, res) => {
             tracking_code,
             stack: error.stack
         });
-        
+
         if (error.response && error.response.data) {
             res.status(500).json({ 
                 error: "Failed to store reply or send it to Inspire",
@@ -409,7 +410,7 @@ function shutdown() {
         console.log('Server closed');
         process.exit(0);
     });
-    
+
     // Force close after 10s
     setTimeout(() => {
         console.error('Could not close connections in time, forcefully shutting down');
