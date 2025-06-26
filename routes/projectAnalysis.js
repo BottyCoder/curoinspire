@@ -37,7 +37,11 @@ async function walk(dir) {
 
 router.get('/api/project-analysis', async (req, res) => {
   try {
-    if (req.headers['x-analysis-token'] !== process.env.ANALYSIS_TOKEN) {
+    const headerToken = req.headers['x-analysis-token'];
+    const queryToken = req.query.token;
+    const expectedToken = process.env.ANALYSIS_TOKEN;
+    
+    if (headerToken !== expectedToken && queryToken !== expectedToken) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     const files = await walk(ROOT);
