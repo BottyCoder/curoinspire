@@ -385,6 +385,15 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'messagestatus.html'));
 });
 
+app.get('/messagestatus', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'messagestatus.html'));
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
 // Set default NODE_ENV if not defined
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
