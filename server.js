@@ -9,6 +9,7 @@ const moment = require('moment-timezone');
 const whatsappStatusWebhook = require('./whatsapp-status-webhook');
 const billingRoutes = require('./billing');
 const combinedBillingRoutes = require('./combinedBilling');
+const projectAnalysisRoute = require('./routes/projectAnalysis');
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Make sure the port is configurable from .env
@@ -80,6 +81,7 @@ app.use('/whatsapp-status-webhook', whatsappStatusWebhook);
 app.use('/billing', billingRoutes);
 app.use('/combined', combinedBillingRoutes);
 app.use('/reports', require('./may-billing-report'));
+app.use(projectAnalysisRoute);
 
 // Add route handler for get-message-status
 app.get('/get-message-status', async (req, res) => {
