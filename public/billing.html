@@ -3,8 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
-    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="slurp" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="duckduckbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="baiduspider" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="yandexbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="applebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="facebookbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="twitterbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="linkedinbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="pinterest" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="whatsapp" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="ccbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="chatgpt-user" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="gptbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="claude-web" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="claudebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="google-extended" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="gemini" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="bard" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
     <title>WhatsApp Billing Dashboard</title>
     <link rel="stylesheet" href="/styles/main.css">
     <style>
@@ -55,7 +74,7 @@
                 <button id="export-btn" class="export-button" onclick="exportToExcel()">
                     Export to Excel
                 </button>
-                
+
                 <select id="month-dropdown" class="reports-dropdown">
                     <option value="">Select Month</option>
                     </select>
@@ -242,7 +261,7 @@
 
             // Create a temporary link and trigger download
             const link = document.createElement('a');
-            
+
             if (selectedMonth) {
                 // Export selected month from stored reports
                 link.href = `/billing/download-report?month=${selectedMonth}`;
@@ -252,7 +271,7 @@
                 link.href = '/billing/export-excel';
                 link.download = `billing-stats-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}.xlsx`;
             }
-            
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

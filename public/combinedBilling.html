@@ -1,11 +1,29 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
-    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="slurp" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="duckduckbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="baiduspider" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="yandexbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="applebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="facebookbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="twitterbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="linkedinbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="pinterest" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="whatsapp" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="ccbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="chatgpt-user" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="gptbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="claude-web" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="claudebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="google-extended" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="gemini" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+    <meta name="bard" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
     <title>Combined Billing Dashboard</title>
     <link rel="stylesheet" href="/styles/main.css">
 </head>
@@ -183,7 +201,7 @@
             try {
                 const response = await fetch('/billing/recent-sessions');
                 const data = await response.json();
-                
+
                 const tbody = document.getElementById('recent-sessions');
                 if (!data.sessions || data.sessions.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" class="p-2 text-center">No recent sessions found</td></tr>';

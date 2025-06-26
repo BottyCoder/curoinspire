@@ -24,6 +24,32 @@ app.use(express.json()); // Add this to handle JSON body parsing globally
 // Enable CORS for all routes
 app.use(cors());
 
+// Anti-crawling middleware - block all bots and crawlers
+app.use((req, res, next) => {
+    const userAgent = req.get('User-Agent') || '';
+    const botPatterns = [
+        'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandexbot',
+        'facebookexternalhit', 'twitterbot', 'linkedinbot', 'whatsapp', 'applebot',
+        'ccbot', 'chatgpt', 'gptbot', 'claude', 'claudebot', 'google-extended',
+        'gemini', 'bard', 'crawler', 'spider', 'scraper', 'bot', 'archiver'
+    ];
+    
+    if (botPatterns.some(pattern => userAgent.toLowerCase().includes(pattern))) {
+        console.log(`🚫 Blocked crawler: ${userAgent}`);
+        return res.status(403).send('Access Forbidden');
+    }
+    
+    // Set anti-indexing headers for all responses
+    res.set({
+        'X-Robots-Tag': 'noindex, nofollow, noarchive, nosnippet, noimageindex, nocache',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, private',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    });
+    
+    next();
+});
+
 // Debug logging
 app.use((req, res, next) => {
     console.log('Incoming request:', req.method, req.url);
