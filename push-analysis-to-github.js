@@ -26,12 +26,18 @@ async function pushAnalysisToGitHub() {
     // Set up remote with authentication if not already configured
     try {
       execSync('git remote get-url origin', { stdio: 'pipe' });
+      // Update existing remote to use token
+      if (process.env.GH_TOKEN && process.env.GIT_URL) {
+        const authenticatedUrl = process.env.GIT_URL.replace('https://', `https://${process.env.GH_TOKEN}@`);
+        execSync(`git remote set-url origin ${authenticatedUrl}`, { stdio: 'pipe' });
+      }
     } catch {
-      if (process.env.GIT_URL) {
+      if (process.env.GH_TOKEN && process.env.GIT_URL) {
         console.log('🔧 Setting up GitHub remote...');
-        execSync(`git remote add origin ${process.env.GIT_URL}`, { stdio: 'inherit' });
+        const authenticatedUrl = process.env.GIT_URL.replace('https://', `https://${process.env.GH_TOKEN}@`);
+        execSync(`git remote add origin ${authenticatedUrl}`, { stdio: 'inherit' });
       } else {
-        throw new Error('GIT_URL secret not configured');
+        throw new Error('GH_TOKEN and GIT_URL secrets not configured');
       }
     }
     
@@ -48,10 +54,10 @@ async function pushAnalysisToGitHub() {
     
     // Push to GitHub
     try {
-      execSync(`git push ${process.env.GIT_URL} main`, { stdio: 'inherit' });
+      execSync('git push origin main', { stdio: 'inherit' });
       console.log(`🚀 Analysis pushed to GitHub as ${filename}`);
     } catch {
-      console.log('⚠️ Push failed - check your GIT_URL secret and repository permissions');
+      console.log('⚠️ Push failed - check your GH_TOKEN and GIT_URL secrets');
     }
     
   } catch (error) {

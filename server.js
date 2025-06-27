@@ -10,6 +10,7 @@ const whatsappStatusWebhook = require('./whatsapp-status-webhook');
 const billingRoutes = require('./billing');
 const combinedBillingRoutes = require('./combinedBilling');
 const projectAnalysisRoute = require('./routes/projectAnalysis');
+require('./cron/pushAnalysis');   // daily GitHub snapshot
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Make sure the port is configurable from .env
