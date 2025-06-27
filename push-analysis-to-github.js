@@ -18,6 +18,10 @@ async function pushAnalysisToGitHub() {
     
     console.log('✅ Analysis downloaded successfully');
     
+    // Configure git safety settings
+    execSync('git config --global --add safe.directory /home/runner/workspace', { stdio: 'pipe' });
+    execSync('git config --global init.defaultBranch main', { stdio: 'pipe' });
+    
     // Check if we have git configured
     try {
       execSync('git config user.name', { stdio: 'pipe' });
