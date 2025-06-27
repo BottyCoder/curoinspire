@@ -7,8 +7,8 @@ async function pushAnalysisToGitHub() {
   try {
     console.log('🔍 Fetching project analysis...');
     
-    // Fetch the analysis
-    const analysisUrl = `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.dev/api/project-analysis?key=${process.env.ANALYSIS_TOKEN}`;
+    // Fetch the analysis from localhost since we're running in the same Repl
+    const analysisUrl = `http://localhost:3000/api/project-analysis?key=${process.env.ANALYSIS_TOKEN}`;
     
     execSync(`curl -s "${analysisUrl}" -o project-analysis.json`, { stdio: 'inherit' });
     
