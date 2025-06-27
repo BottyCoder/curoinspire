@@ -18,6 +18,13 @@ async function pushAnalysisToGitHub() {
     
     console.log('✅ Analysis downloaded successfully');
     
+    // Clean up any stale git lock files
+    try {
+      execSync('rm -f .git/index.lock .git/refs/heads/main.lock', { stdio: 'pipe' });
+    } catch (e) {
+      // Ignore errors if files don't exist
+    }
+    
     // Just set the basics and ignore warnings
     execSync('git config user.name "Replit Bot" 2>/dev/null || true', { stdio: 'pipe' });
     execSync('git config user.email "bot@replit.com" 2>/dev/null || true', { stdio: 'pipe' });
