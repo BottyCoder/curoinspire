@@ -18,26 +18,10 @@ async function pushAnalysisToGitHub() {
     
     console.log('✅ Analysis downloaded successfully');
     
-    // Configure git safety settings
-    execSync('git config --global --add safe.directory /home/runner/workspace', { stdio: 'pipe' });
-    execSync('git config --global init.defaultBranch main', { stdio: 'pipe' });
-    execSync('git config --global --add safe.directory "*"', { stdio: 'pipe' });
-    execSync('git config --global core.filemode false', { stdio: 'pipe' });
-    
-    // Check if we have git configured
-    try {
-      execSync('git config user.name', { stdio: 'pipe' });
-    } catch {
-      console.log('⚙️ Setting up git config...');
-      execSync('git config user.name "Replit Bot"', { stdio: 'inherit' });
-      execSync('git config user.email "bot@replit.com"', { stdio: 'inherit' });
-    }
-    
-    // Initialize git if needed
-    if (!fs.existsSync('.git')) {
-      console.log('🔧 Initializing git repository...');
-      execSync('git init', { stdio: 'inherit' });
-    }
+    // Just set the basics and ignore warnings
+    execSync('git config user.name "Replit Bot" 2>/dev/null || true', { stdio: 'pipe' });
+    execSync('git config user.email "bot@replit.com" 2>/dev/null || true', { stdio: 'pipe' });
+    execSync('git init 2>/dev/null || true', { stdio: 'pipe' });
     
     // Set up remote with authentication if not already configured
     try {
