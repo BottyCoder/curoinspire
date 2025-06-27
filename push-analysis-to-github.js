@@ -21,6 +21,8 @@ async function pushAnalysisToGitHub() {
     // Configure git safety settings
     execSync('git config --global --add safe.directory /home/runner/workspace', { stdio: 'pipe' });
     execSync('git config --global init.defaultBranch main', { stdio: 'pipe' });
+    execSync('git config --global --add safe.directory "*"', { stdio: 'pipe' });
+    execSync('git config --global core.filemode false', { stdio: 'pipe' });
     
     // Check if we have git configured
     try {
