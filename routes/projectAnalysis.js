@@ -38,7 +38,7 @@ async function walk(dir) {
 router.get('/api/project-analysis', async (req, res) => {
   try {
     const headerToken = req.headers['x-analysis-token'];
-    const queryToken = req.query.token;
+    const queryToken = req.query.key;
     const expectedToken = process.env.ANALYSIS_TOKEN;
     
     if (headerToken !== expectedToken && queryToken !== expectedToken) {
